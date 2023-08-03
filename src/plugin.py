@@ -3,7 +3,7 @@ from polarion import polarion
 from .runtime_settings import TestExecutionResult, Settings
 from .exceptions import PolarionTestIDWarn
 
-Settings.POLARION_HOST = 'localhost:80'
+Settings.POLARION_HOST = 'http://localhost:80/polarion'
 Settings.POLARION_USER = 'admin'
 Settings.POLARION_PASSWORD = 'admin'
 # Settings.POLARION_TOKEN = ""
@@ -55,6 +55,9 @@ def pytest_terminal_summary(terminalreporter):
     _fill_keys(terminalreporter.stats, 'skipped')
 
     # Activate client and sync info
+    print("Settings.POLARION_HOST", Settings.POLARION_HOST)
+    print("Settings.POLARION_USER", Settings.POLARION_USER)
+    print("Settings.POLARION_PASSWORD", Settings.POLARION_PASSWORD)
     client = polarion.Polarion(Settings.POLARION_HOST, Settings.POLARION_USER, Settings.POLARION_PASSWORD)
 
     project = client.getProject(Settings.POLARION_PROJECT_ID)

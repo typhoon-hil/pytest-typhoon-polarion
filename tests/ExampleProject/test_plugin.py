@@ -1,7 +1,36 @@
+import warnings
 import pytest
+from polarion import polarion
+from polarion.record import Record
+from src.exceptions import PolarionTestIDWarn
 
 
+client = polarion.Polarion('http://localhost:80/polarion', 'admin', 'admin')
 
+project = client.getProject("ExampleProject")
+
+run = project.getTestRun('REL')
+
+
+pytest_to_polarion_test_cases = {
+	'ExampleProject/test_plugin.py::test_sum': 'EP-392',
+	'ExampleProject/test_plugin.py::test_square_root': 'EP-391',
+	'aasnansnas': 'EP-300',
+}
+
+for key, item in pytest_to_polarion_test_cases.items():
+	# print(item)
+	print(key, item)
+	try:
+		test_case = run.getTestCase(item)
+		if test_case is None:
+			raise TypeError
+		print("test_case.setResult(Record.ResultType.BLOCKED, 'Testing blocking')")
+		# test_case.setResult(Record.ResultType.BLOCKED, 'Testing blocking')
+	except TypeError as e:
+		warnings.warn(f"Test ID {item} not founded in the selected Test Run Project!", PolarionTestIDWarn)
+
+print("Progressing ...")
 
 # run.records[0].setResult(Record.ResultType.PASSED, 'Pass expected')
 # run.records[1].setResult(Record.ResultType.PASSED, 'Pass expected')
