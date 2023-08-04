@@ -1,7 +1,8 @@
 import pytest
-from polarion import polarion
+from polarion.polarion import Polarion
+from polarion.record import Record
 from .runtime_settings import TestExecutionResult, Settings
-from .exceptions import PolarionTestIDWarn
+# from .exceptions import PolarionTestIDWarn
 
 Settings.POLARION_HOST = 'http://localhost:80/polarion'
 Settings.POLARION_USER = 'admin'
@@ -10,9 +11,9 @@ Settings.POLARION_PASSWORD = 'admin'
 
 Settings.POLARION_TOKEN = "eyJraWQiOiJiZmFiMGYyZS1jMGE4MDIxNy0zYzQ2NGZiNy00ZjRkNWEwOSIsInR5cCI6IkpXVCIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJhZG1pbiIsImlkIjoiYmZhYzE5NDgtYzBhODAyMTctM2M0NjRmYjctOTkzMzY5M2YiLCJleHAiOjE2OTg4Nzk2MDAsImlhdCI6MTY5MTEzNzg3NH0.YN8i8YrMYcmRzla_7_92UJQ9hvOGJ9RiRgBlS5WEzigjoUgzqZswU-K2Y0R5vbEcLccDvsSHzzQQueHzNGq4zIOjzE9H74VMTFIBIPlm6oTSroILFBKFASlNdie27qnbMh4WmjFQCqiu2kHS5EgCbKqVUst8yxDMihJhfd7t92ZvcPp-YVxr0T8D7qgBqF77_9Mi20thlah3GN8YLA7UCQLFvI4JXn_hq2MCQABLUpl8CvMyATHp1AMjZOPMkDy70q9Nt_xBJZ2MoPGwiY5F4DKQ48f0PGs8ywIImRbDL1frGlphix8KFzEWnWJ0rGRulN_TL_bNYtJJquYWiE3tSw"
 
-
 import logging
 logger = logging.getLogger(__file__)
+
 
 def pytest_addoption(parser):
     group = parser.getgroup('polarion')
@@ -59,11 +60,12 @@ def pytest_terminal_summary(terminalreporter):
 
     # Activate client and sync info
     if _authentication() == "PASS_AUTH":  # Password Authentication
-        client = polarion.Polarion(polarion_url=Settings.POLARION_HOST,
-                                   user=Settings.POLARION_USER,
-                                   password=Settings.POLARION_PASSWORD)
+        client = Polarion(
+            polarion_url=Settings.POLARION_HOST,
+            user=Settings.POLARION_USER,
+            password=Settings.POLARION_PASSWORD)
     else:  # TOKEN_AUTH
-        client = polarion.Polarion(polarion_url=Settings.POLARION_HOST,
+        client = Polarion(polarion_url=Settings.POLARION_HOST,
                                    user=Settings.POLARION_USER,
                                    token=Settings.POLARION_TOKEN)
 
@@ -71,8 +73,21 @@ def pytest_terminal_summary(terminalreporter):
 
     run = project.getTestRun(Settings.POLARION_TEST_RUN)
 
-    for key, item in TestExecutionResult.polarion_id_test_result.items():
-        print(key, item)
+    for polarion_id, test_results in TestExecutionResult.polarion_id_test_result.items():
+        # TODO: Add parametrize and check how this works on XRAY Plugin
+        polarion_result = polarion_assertion_selection(test_results[0])
+
+        test_case = run.getTestCase(polarion_id)
+        try:
+            test_case.setResult(polarion_result, "")
+        except AttributeError:
+            print(test_case, run, repr(polarion_id), polarion_result)
+
+    # from tabulate import tabulate
+    #
+    # print()
+    # print(tabulate(data, headers=headers, tablefmt="grid"))
+    # print()
 
     print("End of pytest_terminal_summary")
     print()
@@ -118,8 +133,19 @@ def _authentication():
     """Define if the authentication will be done by token or password.
     Used in ``pytest_terminal_summary`` hook"""
     if Settings.POLARION_TOKEN == "":
-        logger.info("Trying Polarion auth by Token")
-        return "PASS_AUTH"
-    else:
         logger.info("Trying Polarion auth by Password")
         return "TOKEN_AUTH"
+    else:
+        logger.info("Trying Polarion auth by Token")
+        return "PASS_AUTH"
+
+
+def polarion_assertion_selection(result):
+    if result.outcome == "passed":
+        return Record.ResultType.PASSED
+    elif result.outcome == "failed":
+        return Record.ResultType.FAILED
+    else:
+        return Record.ResultType.BLOCKED
+
+    # run.records[1].setResult(Record.ResultType.PASSED, 'Pass expected')
