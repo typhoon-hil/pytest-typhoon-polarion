@@ -6,10 +6,15 @@ from .exceptions import PolarionTestIDWarn
 Settings.POLARION_HOST = 'http://localhost:80/polarion'
 Settings.POLARION_USER = 'admin'
 Settings.POLARION_PASSWORD = 'admin'
-# Settings.POLARION_TOKEN = ""
-# Settings.POLARION_PROJECT_ID = 'ExampleProject'
-# Settings.POLARION_TEST_RUN = ''
 
+# TODO: [DOCUMENTATION] To create a token (Valid for maximum 90 days)
+# Show Settings (Engine below the Pn symbol in the left-up corner)
+# > My Account > Personal Access Token (upper-center, below the page header)
+Settings.POLARION_TOKEN = "eyJraWQiOiJiZmFiMGYyZS1jMGE4MDIxNy0zYzQ2NGZiNy00ZjRkNWEwOSIsInR5cCI6IkpXVCIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJhZG1pbiIsImlkIjoiYmZhYzE5NDgtYzBhODAyMTctM2M0NjRmYjctOTkzMzY5M2YiLCJleHAiOjE2OTg4Nzk2MDAsImlhdCI6MTY5MTEzNzg3NH0.YN8i8YrMYcmRzla_7_92UJQ9hvOGJ9RiRgBlS5WEzigjoUgzqZswU-K2Y0R5vbEcLccDvsSHzzQQueHzNGq4zIOjzE9H74VMTFIBIPlm6oTSroILFBKFASlNdie27qnbMh4WmjFQCqiu2kHS5EgCbKqVUst8yxDMihJhfd7t92ZvcPp-YVxr0T8D7qgBqF77_9Mi20thlah3GN8YLA7UCQLFvI4JXn_hq2MCQABLUpl8CvMyATHp1AMjZOPMkDy70q9Nt_xBJZ2MoPGwiY5F4DKQ48f0PGs8ywIImRbDL1frGlphix8KFzEWnWJ0rGRulN_TL_bNYtJJquYWiE3tSw"
+
+
+import logging
+logger = logging.getLogger(__file__)
 
 def pytest_addoption(parser):
     group = parser.getgroup('polarion')
@@ -55,34 +60,24 @@ def pytest_terminal_summary(terminalreporter):
     _fill_keys(terminalreporter.stats, 'skipped')
 
     # Activate client and sync info
-    print("Settings.POLARION_HOST", Settings.POLARION_HOST)
-    print("Settings.POLARION_USER", Settings.POLARION_USER)
-    print("Settings.POLARION_PASSWORD", Settings.POLARION_PASSWORD)
-    client = polarion.Polarion(Settings.POLARION_HOST, Settings.POLARION_USER, Settings.POLARION_PASSWORD)
+    if _authentication() == "PASS_AUTH":  # Password Authentication
+        client = polarion.Polarion(polarion_url=Settings.POLARION_HOST,
+                                   user=Settings.POLARION_USER,
+                                   password=Settings.POLARION_PASSWORD)
+    else:  # TOKEN_AUTH
+        client = polarion.Polarion(polarion_url=Settings.POLARION_HOST,
+                                   user=Settings.POLARION_USER,
+                                   token=Settings.POLARION_TOKEN)
 
     project = client.getProject(Settings.POLARION_PROJECT_ID)
 
     run = project.getTestRun(Settings.POLARION_TEST_RUN)
 
-    # pytest_to_polarion_test_cases = {
-    #     'ExampleProject/test_plugin.py::test_sum': 'EP-392',
-    #     'ExampleProject/test_plugin.py::test_square_root': 'EP-391',
-    #     'aasnansnas': 'EP-300',
-    # }
-
-    for key, item in TestExecutionResult.polarion_tags.items():
-        # print(item)
+    for key, item in TestExecutionResult.polarion_id_test_result.items():
         print(key, item)
-    #     try:
-    #         test_case = run.getTestCase(item)
-    #         if test_case is None:
-    #             raise TypeError
-    #         print("test_case.setResult(Record.ResultType.BLOCKED, 'Testing blocking')")
-    #     # test_case.setResult(Record.ResultType.BLOCKED, 'Testing blocking')
-    #     except TypeError as e:
-    #         warnings.warn(f"Test ID {item} not founded in the selected Test Run Project!", PolarionTestIDWarn)
-    #
-    # print("Progressing ...")
+
+    print("End of pytest_terminal_summary")
+    print()
 
 
 def pytest_sessionfinish(session):
@@ -90,26 +85,43 @@ def pytest_sessionfinish(session):
 
 
 def _fill_keys(stats, outcome):
+    """Provides a dictionary with the polarion tags and the test result for uploading in polarion app.
+    Used in ``pytest_terminal_summary`` hook."""
     if outcome in stats:
         for stat in stats[outcome]:
             try:
-                xray_key = TestExecutionResult.polarion_tags[stat.nodeid]
+                polarion_test_id = TestExecutionResult.polarion_tags[stat.nodeid]
             except KeyError:
                 continue
             try:
-                TestExecutionResult.polarion_id_test_result[xray_key].append(stat)
+                TestExecutionResult.polarion_id_test_result[polarion_test_id].append(stat)
             except KeyError:
-                TestExecutionResult.polarion_id_test_result[xray_key] = [stat]
+                TestExecutionResult.polarion_id_test_result[polarion_test_id] = [stat]
 
 
 def _get_polarion_marker(item):
+    """Catches the polarion marker.
+    Used in ``_store_item`` function > ``pytest_collection_modifyitems`` hook"""
     return item.get_closest_marker('polarion')
 
 
 def _store_item(item):
+    """On colletion storage the tests node and the polarion tags.
+    Used in ``pytest_collection_modifyitems`` hook"""
     marker = _get_polarion_marker(item)
     if not marker:
         return
 
     test_id = marker.kwargs['test_id']
     TestExecutionResult.polarion_tags[item.nodeid] = test_id
+
+
+def _authentication():
+    """Define if the authentication will be done by token or password.
+    Used in ``pytest_terminal_summary`` hook"""
+    if Settings.POLARION_TOKEN == "":
+        logger.info("Trying Polarion auth by Token")
+        return "PASS_AUTH"
+    else:
+        logger.info("Trying Polarion auth by Password")
+        return "TOKEN_AUTH"
