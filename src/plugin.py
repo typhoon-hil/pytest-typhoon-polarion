@@ -2,15 +2,7 @@ import pytest
 from polarion.polarion import Polarion
 from polarion.record import Record
 from .runtime_settings import TestExecutionResult, Settings
-# from .exceptions import PolarionTestIDWarn
-
-Settings.POLARION_HOST = 'http://localhost:80/polarion'
-Settings.POLARION_USER = 'admin'
-Settings.POLARION_PASSWORD = 'admin'
-
-
-Settings.POLARION_TOKEN = "eyJraWQiOiJiZmFiMGYyZS1jMGE4MDIxNy0zYzQ2NGZiNy00ZjRkNWEwOSIsInR5cCI6IkpXVCIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJhZG1pbiIsImlkIjoiYmZhYzE5NDgtYzBhODAyMTctM2M0NjRmYjctOTkzMzY5M2YiLCJleHAiOjE2OTg4Nzk2MDAsImlhdCI6MTY5MTEzNzg3NH0.YN8i8YrMYcmRzla_7_92UJQ9hvOGJ9RiRgBlS5WEzigjoUgzqZswU-K2Y0R5vbEcLccDvsSHzzQQueHzNGq4zIOjzE9H74VMTFIBIPlm6oTSroILFBKFASlNdie27qnbMh4WmjFQCqiu2kHS5EgCbKqVUst8yxDMihJhfd7t92ZvcPp-YVxr0T8D7qgBqF77_9Mi20thlah3GN8YLA7UCQLFvI4JXn_hq2MCQABLUpl8CvMyATHp1AMjZOPMkDy70q9Nt_xBJZ2MoPGwiY5F4DKQ48f0PGs8ywIImRbDL1frGlphix8KFzEWnWJ0rGRulN_TL_bNYtJJquYWiE3tSw"
-
+from .utils import read_or_get
 import logging
 logger = logging.getLogger(__file__)
 
@@ -18,15 +10,25 @@ logger = logging.getLogger(__file__)
 def pytest_addoption(parser):
     group = parser.getgroup('polarion')
     group.addoption(
+        "--secrets",
+        dest='secrets',
+        help='Login Information by the secrets file'
+    )
+    group.addoption(
         "--polarion-test-run",
         dest='polarion_test_run',
-        help='Polarion test run id'
+        help='Polarion Test Run ID'
     )
     group.addoption(
         "--polarion-project-id",
         dest='polarion_project_id',
         help='Polarion project id'
     )
+
+
+@pytest.fixture
+def secrets(request):
+    return request.config.option.secrets
 
 
 @pytest.fixture
@@ -47,6 +49,12 @@ def pytest_configure(config):
     Settings.POLARION_TEST_RUN = config.getoption("polarion_test_run")
     Settings.POLARION_PROJECT_ID = config.getoption("polarion_project_id")
 
+    secrets = config.getoption('secrets')
+
+    Settings.POLARION_HOST = read_or_get(secrets, 'POLARION_HOST', '')
+    Settings.POLARION_USER = read_or_get(secrets, 'POLARION_USER', '')
+    Settings.POLARION_PASSWORD = read_or_get(secrets, 'POLARION_PASSWORD', '')
+    Settings.POLARION_TOKEN = read_or_get(secrets, 'POLARION_TOKEN', '')
 
 def pytest_collection_modifyitems(config, items):
     for item in items:
@@ -82,15 +90,6 @@ def pytest_terminal_summary(terminalreporter):
             test_case.setResult(polarion_result, "")
         except AttributeError:
             print(test_case, run, repr(polarion_id), polarion_result)
-
-    # from tabulate import tabulate
-    #
-    # print()
-    # print(tabulate(data, headers=headers, tablefmt="grid"))
-    # print()
-
-    print("End of pytest_terminal_summary")
-    print()
 
 
 def pytest_sessionfinish(session):
@@ -147,5 +146,3 @@ def polarion_assertion_selection(result):
         return Record.ResultType.FAILED
     else:
         return Record.ResultType.BLOCKED
-
-    # run.records[1].setResult(Record.ResultType.PASSED, 'Pass expected')
