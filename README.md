@@ -25,12 +25,12 @@ pip install .
 
 ----
 
-**Note:** The plugin was developed and executes with no problems on Python 3.9.6.
+**Note:** 
+
+The plugin was developed and executes with no problems on Python 3.9.6.
 Other python version may require modifications or use of Polarion REST API. Since 
 this plugin was developed on top of 
 [a open-source Polarion project](https://pypi.org/project/polarion/).
-
-----
 
 ## Getting Started
 
@@ -47,7 +47,7 @@ Now, the **Project ID** used when created and the **Test Run ID** needs to be
 passed to the options, like:
 
 ```commandline
---polarion-test-run=<TestRun_id> --polarion-project-id=<Project_id>
+--polarion-project-id=<Project_id> --polarion-test-run=<TestRun_id> 
 ```
 
 And the test cases needs to be link with the pytest test implemented, for each
