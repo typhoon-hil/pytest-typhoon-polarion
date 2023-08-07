@@ -10,7 +10,7 @@ the test cases and connect then with the ``Test Runs``, run the tests once
 and then the plugin will be able using the secrets file and the options to 
 sync the test result with Polarion Test Runs.
 
-## Instalaltion
+## Installation
 
 To install ``pytest-typhoon-polarion`` plugin creates a new Python  environment 
 or install on system one cloning the project:
@@ -22,6 +22,15 @@ And use ``pip install`` command locally in the root of the project:
 ```console
 pip install .
 ```
+
+----
+
+**Note:** The plugin was developed and executes with no problems on Python 3.9.6.
+Other python version may require modifications or use of Polarion REST API. Since 
+this plugin was developed on top of 
+[a open-source Polarion project](https://pypi.org/project/polarion/).
+
+----
 
 ## Getting Started
 
@@ -57,4 +66,5 @@ def test_check_signal_Vab_freq():
 
 ## Miscellaneous
 ### How to create a token (Valid for maximum 90 days):
-Show Settings (Engine below the Pn symbol in the left-up corner) > My Account > Personal Access Token (upper-center, below the page header)
+Show Settings (Engine below the Pn symbol in the left-up corner) > 
+My Account > Personal Access Token (upper-center, below the page header)
