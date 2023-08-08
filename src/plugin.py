@@ -73,9 +73,10 @@ def pytest_terminal_summary(terminalreporter):
             user=Settings.POLARION_USER,
             password=Settings.POLARION_PASSWORD)
     else:  # TOKEN_AUTH
-        client = Polarion(polarion_url=Settings.POLARION_HOST,
-                                   user=Settings.POLARION_USER,
-                                   token=Settings.POLARION_TOKEN)
+        client = Polarion(
+            polarion_url=Settings.POLARION_HOST,
+            user=Settings.POLARION_USER,
+            token=Settings.POLARION_TOKEN)
 
     project = client.getProject(Settings.POLARION_PROJECT_ID)
 

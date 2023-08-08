@@ -68,3 +68,18 @@ def test_check_signal_Vab_freq():
 ### How to create a token (Valid for maximum 90 days):
 Show Settings (Engine below the Pn symbol in the left-up corner) > 
 My Account > Personal Access Token (upper-center, below the page header)
+
+### Exception ``requests.exceptions.SSLError``
+
+The full name exception:
+
+```plain text
+requests.exceptions.SSLError: HTTPSConnectionPool(host='localhost', port=80): 
+Max retries exceeded with url: /polarion/ws/services 
+(Caused by SSLError(SSLError(1, '[SSL: WRONG_VERSION_NUMBER] wrong version number 
+(_ssl.c:1129)')))
+```
+
+Can happen when the **Polarion Server** and the **Apache** is not start correctly.
+In case the tests results are not able to be uploaded to Polarion, please check if
+Apache is running and the machine has none SSL Certificates issues with Polarion.
