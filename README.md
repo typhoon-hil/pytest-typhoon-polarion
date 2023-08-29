@@ -15,7 +15,7 @@ sync the test result with Polarion Test Runs.
 To install ``pytest-typhoon-polarion`` plugin creates a new Python  environment 
 or install on system one cloning the project:
 ```console
-git clone https://gitlab.typhoon-hil.com/dev/qa/pytest-polarion.git
+git clone https://github.com/typhoon-hil/pytest-typhoon-polarion.git
 ```
 
 And use ``pip install`` command locally in the root of the project:
