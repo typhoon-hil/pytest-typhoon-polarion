@@ -1,4 +1,8 @@
 # Pytest plugin for integration with Siemens Polarion
+**Note:** Plugin under development
+
+This plugin is part of [pytest framework]([url](https://docs.pytest.org/)) integration 
+with Siemens Polarion developed by Typhoon HIL.
 
 On Polarion struct the template used was ``Agile Software Project (Product and 
 Release Backlogs, Sprint Management, Quality Assurance, Builds)``. On this 
