@@ -1,3 +1,8 @@
 build
 **/secrets
 .idea/*
+**/report/*
+**/allure-html/*
+**/open_report.cmd
+pytest_typhoon_polarion.egg-info/*
+**/__pycache__/*

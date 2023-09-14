@@ -1,11 +1,13 @@
 import pytest
 from polarion.polarion import Polarion
 from polarion.record import Record
-from .runtime_settings import TestExecutionResult, Settings
+from .runtime_settings import TestExecutionResult, Settings, PolarionTestRunRefs
 from .utils import read_or_get
+from .exceptions import InvalidCredentialsError
 import logging
-logger = logging.getLogger(__file__)
 
+logger = logging.getLogger(__file__)
+POLARION_TEST_RUN = PolarionTestRunRefs()
 
 def pytest_addoption(parser):
     group = parser.getgroup('polarion')
@@ -56,6 +58,44 @@ def pytest_configure(config):
     Settings.POLARION_PASSWORD = read_or_get(secrets, 'POLARION_PASSWORD', '')
     Settings.POLARION_TOKEN = read_or_get(secrets, 'POLARION_TOKEN', '')
 
+    logger.info(
+        'Server configuration:\n'
+        f'\tHost: {Settings.POLARION_HOST}\n'
+        f'\tUser: {Settings.POLARION_USER}'
+    )
+
+    # Activate client and sync info
+    try:
+        if _authentication() == "PASS_AUTH":  # Password Authentication
+            client = Polarion(
+                polarion_url=Settings.POLARION_HOST,
+                user=Settings.POLARION_USER,
+                password=Settings.POLARION_PASSWORD)
+        else:  # TOKEN_AUTH
+            client = Polarion(
+                polarion_url=Settings.POLARION_HOST,
+                user=Settings.POLARION_USER,
+                token=Settings.POLARION_TOKEN)
+    except Exception as e:
+        if str(e) == f'Could not log in to Polarion for user {Settings.POLARION_USER}':
+            raise InvalidCredentialsError(
+                'Your credentials are not valid, check your '
+                '`secrets` file and make sure that host address '
+                'user, and password or token is correct.'
+                )
+
+    project = client.getProject(Settings.POLARION_PROJECT_ID)
+
+    run = project.getTestRun(Settings.POLARION_TEST_RUN)
+
+    # run.hasTestCase('test_case_id')
+
+    # Add in a global class all the polarion test run references
+    POLARION_TEST_RUN.client = client
+    POLARION_TEST_RUN.project = project
+    POLARION_TEST_RUN.run = run
+
+
 def pytest_collection_modifyitems(config, items):
     for item in items:
         _store_item(item)
@@ -66,28 +106,21 @@ def pytest_terminal_summary(terminalreporter):
     _fill_keys(terminalreporter.stats, 'failed')
     _fill_keys(terminalreporter.stats, 'skipped')
 
-    # Activate client and sync info
-    if _authentication() == "PASS_AUTH":  # Password Authentication
-        client = Polarion(
-            polarion_url=Settings.POLARION_HOST,
-            user=Settings.POLARION_USER,
-            password=Settings.POLARION_PASSWORD)
-    else:  # TOKEN_AUTH
-        client = Polarion(
-            polarion_url=Settings.POLARION_HOST,
-            user=Settings.POLARION_USER,
-            token=Settings.POLARION_TOKEN)
+    run = POLARION_TEST_RUN.run
 
-    project = client.getProject(Settings.POLARION_PROJECT_ID)
-
-    run = project.getTestRun(Settings.POLARION_TEST_RUN)
+    print(run.hasTestCase("DEMO-391"))
+    print(run.hasTestCase("DEMO-393"))
+    print(run.hasTestCase("DEMO-394"))
 
     for polarion_id, test_results in TestExecutionResult.polarion_id_test_result.items():
         # TODO: Add parametrize and check how this works on XRAY Plugin
         polarion_result = polarion_assertion_selection(test_results[0])
-
+        print("\ntest_run:", run, "\n")
         test_case = run.getTestCase(polarion_id)
+
+        print("\ntest_case:", test_case, "\n")
         try:
+            print(f"polarion_result: {polarion_result}")
             test_case.setResult(polarion_result, "")
         except AttributeError:
             print(test_case, run, repr(polarion_id), polarion_result)
@@ -133,11 +166,11 @@ def _authentication():
     """Define if the authentication will be done by token or password.
     Used in ``pytest_terminal_summary`` hook"""
     if Settings.POLARION_TOKEN == "":
-        logger.info("Trying Polarion auth by Password")
-        return "TOKEN_AUTH"
-    else:
         logger.info("Trying Polarion auth by Token")
         return "PASS_AUTH"
+    else:
+        logger.info("Trying Polarion auth by Password")
+        return "TOKEN_AUTH"
 
 
 def polarion_assertion_selection(result):

@@ -13,3 +13,9 @@ class Settings:
 class TestExecutionResult:
     polarion_tags = {}
     polarion_id_test_result = {}
+
+
+class PolarionTestRunRefs:
+    client = None
+    project = None
+    run = None

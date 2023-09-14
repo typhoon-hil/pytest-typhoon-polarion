@@ -7,3 +7,8 @@ class PluginError(Exception):
 class ConfigurationError(PluginError):
     """Errors in runtime configuration"""
     pass
+
+
+class InvalidCredentialsError(Exception):
+    """Errors in polarion credentials"""
+    pass
