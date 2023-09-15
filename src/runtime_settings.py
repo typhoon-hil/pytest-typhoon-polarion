@@ -19,3 +19,4 @@ class PolarionTestRunRefs:
     client = None
     project = None
     run = None
+    test_cases = list()

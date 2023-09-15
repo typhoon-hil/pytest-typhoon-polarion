@@ -77,12 +77,17 @@ def pytest_configure(config):
                 user=Settings.POLARION_USER,
                 token=Settings.POLARION_TOKEN)
     except Exception as e:
-        if str(e) == f'Could not log in to Polarion for user {Settings.POLARION_USER}':
+        if str(e) == f'Could not log in to Polarion for user {Settings.POLARION_USER}' or \
+            str(e) == 'Cannot login because WSDL has no SessionWebService':
             raise InvalidCredentialsError(
                 'Your credentials are not valid, check your '
                 '`secrets` file and make sure that host address '
                 'user, and password or token is correct.'
-                )
+                ) from None
+        else:
+            raise e from None
+    
+
 
     project = client.getProject(Settings.POLARION_PROJECT_ID)
 
