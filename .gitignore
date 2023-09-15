@@ -6,3 +6,4 @@ build
 **/open_report.cmd
 pytest_typhoon_polarion.egg-info/*
 **/__pycache__/*
+**/pytestdebug.log

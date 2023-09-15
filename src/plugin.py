@@ -1,13 +1,14 @@
 import pytest
 from polarion.polarion import Polarion
 from polarion.record import Record
+from zeep.exceptions import Fault
+import logging
 from .runtime_settings import TestExecutionResult, Settings, PolarionTestRunRefs
 from .utils import read_or_get
-from .exceptions import InvalidCredentialsError
-import logging
+from .exceptions import InvalidCredentialsError, TestCaseTypeError, TestCaseNotFoundError
 
 logger = logging.getLogger(__file__)
-POLARION_TEST_RUN = PolarionTestRunRefs()
+
 
 def pytest_addoption(parser):
     group = parser.getgroup('polarion')
@@ -59,7 +60,7 @@ def pytest_configure(config):
     Settings.POLARION_TOKEN = read_or_get(secrets, 'POLARION_TOKEN', '')
 
     logger.info(
-        'Server configuration:\n'
+        'Polarion Server configuration:\n'
         f'\tHost: {Settings.POLARION_HOST}\n'
         f'\tUser: {Settings.POLARION_USER}'
     )
@@ -86,24 +87,24 @@ def pytest_configure(config):
                 ) from None
         else:
             raise e from None
-    
-
 
     project = client.getProject(Settings.POLARION_PROJECT_ID)
-
-    run = project.getTestRun(Settings.POLARION_TEST_RUN)
-
-    # run.hasTestCase('test_case_id')
-
+    run = project.getTestRun(Settings.POLARION_TEST_RUN)    
+    
     # Add in a global class all the polarion test run references
-    POLARION_TEST_RUN.client = client
-    POLARION_TEST_RUN.project = project
-    POLARION_TEST_RUN.run = run
+    PolarionTestRunRefs.client = client
+    PolarionTestRunRefs.project = project
+    PolarionTestRunRefs.run = run
 
 
 def pytest_collection_modifyitems(config, items):
+    '''On this hook the Polarion Test ID markers is collected and organized in dictionaries. Also, 
+    part of validation is made in order to not wait the whole test execution to discover that the 
+    test results cannot be uploaded'''
     for item in items:
         _store_item(item)
+
+    _validation_test_run() 
 
 
 def pytest_terminal_summary(terminalreporter):
@@ -111,24 +112,22 @@ def pytest_terminal_summary(terminalreporter):
     _fill_keys(terminalreporter.stats, 'failed')
     _fill_keys(terminalreporter.stats, 'skipped')
 
-    run = POLARION_TEST_RUN.run
-
-    print(run.hasTestCase("DEMO-391"))
-    print(run.hasTestCase("DEMO-393"))
-    print(run.hasTestCase("DEMO-394"))
+    run = PolarionTestRunRefs.run
 
     for polarion_id, test_results in TestExecutionResult.polarion_id_test_result.items():
         # TODO: Add parametrize and check how this works on XRAY Plugin
         polarion_result = polarion_assertion_selection(test_results[0])
-        print("\ntest_run:", run, "\n")
         test_case = run.getTestCase(polarion_id)
-
-        print("\ntest_case:", test_case, "\n")
         try:
-            print(f"polarion_result: {polarion_result}")
             test_case.setResult(polarion_result, "")
-        except AttributeError:
-            print(test_case, run, repr(polarion_id), polarion_result)
+        except Fault as fault:
+            if str(fault) == 'java.lang.UnsupportedOperationException':
+                raise TestCaseTypeError(
+                    'Test case result update failed. '
+                    'Most probably because the test type was not '
+                    'configured as "Automated Test".') from None
+            else:
+                raise e from None
 
 
 def pytest_sessionfinish(session):
@@ -159,7 +158,10 @@ def _get_polarion_marker(item):
 def _store_item(item):
     """On colletion storage the tests node and the polarion tags.
     Used in ``pytest_collection_modifyitems`` hook"""
+
     marker = _get_polarion_marker(item)
+    PolarionTestRunRefs.test_cases.append(marker.kwargs['test_id'])
+
     if not marker:
         return
 
@@ -185,3 +187,25 @@ def polarion_assertion_selection(result):
         return Record.ResultType.FAILED
     else:
         return Record.ResultType.BLOCKED
+
+
+def _validation_test_run():
+    run = PolarionTestRunRefs.run
+
+    for test_case_id in PolarionTestRunRefs.test_cases:
+        if not run.hasTestCase(test_case_id):
+            raise TestCaseNotFoundError(
+                f'The Test Case ID "{test_case_id}" was not found for the Test Run "{run.id}".'
+            )
+
+        if _test_type_select_from_test_case(test_case_id) != 'automated':
+            raise TestCaseTypeError(
+                f'The Test Case ID "{test_case_id}" is not configured as "Automated Test".'
+            )
+
+
+def _test_type_select_from_test_case(test_case_id):
+    project = PolarionTestRunRefs.project
+    test_case = project.getWorkitem(test_case_id)
+
+    return test_case.customFields['Custom'][0]['value']['id']
