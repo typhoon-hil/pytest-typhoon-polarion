@@ -8,7 +8,8 @@ setup(
     author_email='tiarles.moralles@typhoon-hil.com',
     packages=['src'],
     install_requires=[
-        "pytest",
+        "typhoontest",
+        "polarion",
     ],
     entry_points={
         'pytest11': [

@@ -134,9 +134,17 @@ def pytest_terminal_summary(terminalreporter):
             else:
                 raise e from None
 
-        # Adding the Hyperlink on Test Case - Work Items
-        test_node = TestExecutionResult.test_polarion_mapping[test_case_id]
-        
+        # Hyperlink on Test Case - Work Items 
+        # - Remove all them and re-enter with Allure address
+        test_node = test_results[0].nodeid
+        test_case_links = test_case_item.hyperlinks
+
+        # If hyperlink list is not empty it will be clean up
+        if test_case_links is not None: 
+            hyperlinks = _process_hyperlinks_from_polarion(test_case_links)
+            for hyperlink in hyperlinks:
+                test_case_item.removeHyperlink(hyperlink)
+
         try:  # TODO: To temp fix when the test has multiple parameters
             test_rest_url = get_test_case_url(test_node)  # On DEV
             test_case_item.addHyperlink(test_rest_url, Workitem.HyperlinkRoles.EXTERNAL_REF)
@@ -224,3 +232,12 @@ def _test_type_select_from_test_case(test_case_id):
     test_case = project.getWorkitem(test_case_id)
 
     return test_case.customFields['Custom'][0]['value']['id']
+
+
+def _process_hyperlinks_from_polarion(test_case_links):
+    hyperlinks = []
+    
+    for hyperlink_item in test_case_links['Hyperlink']:
+        hyperlinks.append(hyperlink_item['uri'])
+
+    return hyperlinks
