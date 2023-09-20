@@ -14,6 +14,11 @@ def test_if_false():
 @pytest.mark.polarion(test_id="DEMO-394")
 @pytest.mark.parametrize('value', [0, 10, 20, 25, 30])
 def test_with_parametrize(value):
-    '''This test case is under development. Only the first test 
-    (`value = 0` will be considered) when upload on Polarion.'''
     assert value < 12 or value == 25
+
+
+# @pytest.mark.polarion(test_id="DEMO-654")
+# def test_nonexistent():
+#     '''Create to force pytest to fail when a test case
+#      is not existent in Polarion'''
+#     assert 5 == 6

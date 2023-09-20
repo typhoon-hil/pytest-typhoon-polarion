@@ -1,4 +1,55 @@
 
+class AllureReportData:
+    host = '192.168.1.92'
+    port = 63650
+
+    suite_uid = '88161aaa9646217cd0c3752f09c90267'
+
+    test_cases_uid = {
+        'Demo2/test_demo2.py::test_if_true': '1c10a9bbb0884ffc',
+        'Demo2/test_demo2.py::test_if_false': 'dfbb10ec01e4e66d',
+        'Demo2/test_demo2.py::test_with_parametrize[0]': '2cb1e146673ad37b',
+    }
+
+
+def get_test_case_url(test_node_id):
+    a = AllureReportData()
+    url_pattern = 'http://{host}:{port}/index.html#suites/{suite_uid}/{test_uid}/'
+
+    host = a.host
+    port = a.port
+
+    suite_uid = a.suite_uid
+    test_uid = a.test_cases_uid[test_node_id]
+
+    return url_pattern.format(
+        host=host,
+        port=port,
+        suite_uid=suite_uid,
+        test_uid=test_uid
+    )
+
+    # def get_all_test_case_url(self):
+    #     url_pattern = 'http://{host}:{port}/allure-html/#suites/{suite_uid}/{test_uid}/'
+
+    #     host = self.host
+    #     port = self.port
+
+    #     suite_uid = self.suite_uid
+
+    #     urls = {}
+
+    #     for key in a.test_cases_uid:
+    #         urls[key] = url_pattern.format(
+    #             host=host,
+    #             port=port,
+    #             suite_uid=suite_uid,
+    #             test_uid=self.test_cases_uid[key]
+    #         )
+
+    #     return urls
+
+
 # URL is: localhost:port/index.html#suites/SUITE_UID/TEST_UID/
 
 def __find_element_in_dict_list(data, prop, value):

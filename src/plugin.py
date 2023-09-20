@@ -1,11 +1,13 @@
 import pytest
 from polarion.polarion import Polarion
 from polarion.record import Record
+from polarion.workitem import Workitem
 from zeep.exceptions import Fault
 import logging
 from .runtime_settings import TestExecutionResult, Settings, PolarionTestRunRefs
 from .utils import read_or_get
 from .exceptions import InvalidCredentialsError, TestCaseTypeError, TestCaseNotFoundError
+from .work_items_utils import get_test_case_url  # On DEV
 
 logger = logging.getLogger(__file__)
 
@@ -104,7 +106,7 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         _store_item(item)
 
-    _validation_test_run() 
+    _validation_test_run()
 
 
 def pytest_terminal_summary(terminalreporter):
@@ -112,14 +114,17 @@ def pytest_terminal_summary(terminalreporter):
     _fill_keys(terminalreporter.stats, 'failed')
     _fill_keys(terminalreporter.stats, 'skipped')
 
+    project = PolarionTestRunRefs.project
     run = PolarionTestRunRefs.run
 
-    for polarion_id, test_results in TestExecutionResult.polarion_id_test_result.items():
+    for test_case_id, test_results in TestExecutionResult.result_polarion_mapping.items():
         # TODO: Add parametrize and check how this works on XRAY Plugin
         polarion_result = polarion_assertion_selection(test_results[0])
-        test_case = run.getTestCase(polarion_id)
+        test_case_record = run.getTestCase(test_case_id)
+        test_case_item = project.getWorkitem(test_case_id)
+
         try:
-            test_case.setResult(polarion_result, "")
+            test_case_record.setResult(polarion_result, "")
         except Fault as fault:
             if str(fault) == 'java.lang.UnsupportedOperationException':
                 raise TestCaseTypeError(
@@ -128,6 +133,15 @@ def pytest_terminal_summary(terminalreporter):
                     'configured as "Automated Test".') from None
             else:
                 raise e from None
+
+        # Adding the Hyperlink on Test Case - Work Items
+        test_node = TestExecutionResult.test_polarion_mapping[test_case_id]
+        
+        try:  # TODO: To temp fix when the test has multiple parameters
+            test_rest_url = get_test_case_url(test_node)  # On DEV
+            test_case_item.addHyperlink(test_rest_url, Workitem.HyperlinkRoles.EXTERNAL_REF)
+        except KeyError:
+            pass
 
 
 def pytest_sessionfinish(session):
@@ -140,13 +154,13 @@ def _fill_keys(stats, outcome):
     if outcome in stats:
         for stat in stats[outcome]:
             try:
-                polarion_test_id = TestExecutionResult.polarion_tags[stat.nodeid]
+                polarion_test_id = TestExecutionResult.polarion_test_mapping[stat.nodeid]
             except KeyError:
                 continue
             try:
-                TestExecutionResult.polarion_id_test_result[polarion_test_id].append(stat)
+                TestExecutionResult.result_polarion_mapping[polarion_test_id].append(stat)
             except KeyError:
-                TestExecutionResult.polarion_id_test_result[polarion_test_id] = [stat]
+                TestExecutionResult.result_polarion_mapping[polarion_test_id] = [stat]
 
 
 def _get_polarion_marker(item):
@@ -165,8 +179,9 @@ def _store_item(item):
     if not marker:
         return
 
-    test_id = marker.kwargs['test_id']
-    TestExecutionResult.polarion_tags[item.nodeid] = test_id
+    test_case_id = marker.kwargs['test_id']
+    TestExecutionResult.polarion_test_mapping[item.nodeid] = test_case_id
+    TestExecutionResult.test_polarion_mapping[test_case_id] = item.nodeid
 
 
 def _authentication():

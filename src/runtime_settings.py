@@ -11,8 +11,10 @@ class Settings:
 
 
 class TestExecutionResult:
-    polarion_tags = {}
-    polarion_id_test_result = {}
+    polarion_test_mapping = {}  # test_name: polarion_test_id (str: str)
+
+    result_polarion_mapping = {}  # polarion_test_id: test_results (str: list)
+    test_polarion_mapping = {}  # Inverted polarion_test_mapping dict
 
 
 class PolarionTestRunRefs:
