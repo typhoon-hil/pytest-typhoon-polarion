@@ -1,35 +1,3 @@
-
-class AllureReportData:
-    # host = '192.168.1.92'
-    # port = 63650
-
-    suite_uid = '88161aaa9646217cd0c3752f09c90267'
-
-    test_cases_uid = {
-        'Demo2/test_demo2.py::test_if_true': '1c10a9bbb0884ffc',
-        'Demo2/test_demo2.py::test_if_false': 'dfbb10ec01e4e66d',
-        'Demo2/test_demo2.py::test_with_parametrize[0]': '2cb1e146673ad37b',
-    }
-
-
-def get_test_case_url(web_url, test_node_id):
-    a = AllureReportData()
-    url_pattern = '{web_url}#suites/{suite_uid}/{test_uid}/'
-
-    # host = a.host
-    # port = a.port
-
-    suite_uid = a.suite_uid
-    test_uid = a.test_cases_uid[test_node_id]
-
-    return url_pattern.format(
-        host=host,
-        port=port,
-        suite_uid=suite_uid,
-        test_uid=test_uid
-    )
-
-
 import os
 import json
 
@@ -73,11 +41,34 @@ def _get_uid_values_rec(children, uid_test_name_mapping=dict(), child_full_name=
     return uid_test_name_mapping, parent_uid
 
 
+# class AllureReportData:
+#     # host = '192.168.1.92'
+#     # port = 63650
+
+#     suite_uid = '88161aaa9646217cd0c3752f09c90267'
+
+#     test_cases_uid = {
+#         'Demo2/test_demo2.py::test_if_true': '1c10a9bbb0884ffc',
+#         'Demo2/test_demo2.py::test_if_false': 'dfbb10ec01e4e66d',
+#         'Demo2/test_demo2.py::test_with_parametrize[0]': '2cb1e146673ad37b',
+#     }
+
 
 def get_uid_values(report_path):
     json_file = process_report(report_path)
     json_file_children = json_file['children']
     return _get_uid_values_rec(json_file_children)
+
+
+def get_test_case_url(web_url, parent_uid, uid_test_mapping, test_node_id):
+    url_pattern = '{web_url}#suites/{parent_uid}/{test_uid}/'
+
+    return url_pattern.format(
+        web_url=web_url,
+        parent_uid=parent_uid,
+        test_uid=uid_test_mapping[test_node_id],
+    )
+
 
 # def __find_element_in_dict_list(data, prop, value):
 #     return next((item for i, item in enumerate(data) if item[prop] == value), None)

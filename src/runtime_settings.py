@@ -18,6 +18,9 @@ class TestExecutionResult:
     result_polarion_mapping = {}  # polarion_test_id: test_results (str: list)
     test_polarion_mapping = {}  # Inverted polarion_test_mapping dict
 
+    uid_test_mapping = {}  # test_name: uid (str: str)
+    parent_uid = None
+
 
 class PolarionTestRunRefs:
     client = None

@@ -1,13 +1,18 @@
 import pytest
+import os
+from pathlib import Path
+
 from polarion.polarion import Polarion
 from polarion.record import Record
 from polarion.workitem import Workitem
 from zeep.exceptions import Fault
+
 import logging
+
 from .runtime_settings import TestExecutionResult, Settings, PolarionTestRunRefs
 from .utils import read_or_get
 from .exceptions import InvalidCredentialsError, TestCaseTypeError, TestCaseNotFoundError
-from .work_items_utils import get_uid_values
+from .work_items_utils import get_uid_values, get_test_case_url
 
 logger = logging.getLogger(__file__)
 
@@ -130,23 +135,14 @@ def pytest_terminal_summary(terminalreporter):
     run = PolarionTestRunRefs.run
 
     if Settings.WEB_URL is not None:
-
-        import os
-        from pathlib import Path
-
         full_alluredir = os.path.abspath(Settings.ALLUREDIR)
         html_path = Path(full_alluredir).parent / 'allure-html'
 
-        print("html_path:", html_path)
-        print("polarion_test_mapping:", TestExecutionResult.polarion_test_mapping)
+        uid_test_mapping, parent_uid = get_uid_values(html_path)
+        
+        TestExecutionResult.uid_test_mapping = uid_test_mapping
+        TestExecutionResult.parent_uid = parent_uid
 
-        uid_values = get_uid_values(html_path)
-
-        import sys
-        sys.exit()
-
-        # ...
-    
     for test_case_id, test_results in TestExecutionResult.result_polarion_mapping.items():
         # TODO: Add parametrize and check how this works on XRAY Plugin
         polarion_result = polarion_assertion_selection(test_results[0])
@@ -178,9 +174,14 @@ def pytest_terminal_summary(terminalreporter):
                     test_case_item.removeHyperlink(hyperlink)
 
             try:  # TODO: To temp fix when the test has multiple parameters
-                test_rest_url = get_test_case_url(Settings.WEB_URL, test_node)  # On DEV
+                test_rest_url = get_test_case_url(
+                    Settings.WEB_URL, 
+                    TestExecutionResult.parent_uid, 
+                    TestExecutionResult.uid_test_mapping, 
+                    test_node,
+                )
                 test_case_item.addHyperlink(test_rest_url, Workitem.HyperlinkRoles.EXTERNAL_REF)
-            except KeyError:
+            except KeyError as e:
                 pass
 
 
