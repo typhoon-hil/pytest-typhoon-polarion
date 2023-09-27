@@ -7,7 +7,7 @@ import logging
 from .runtime_settings import TestExecutionResult, Settings, PolarionTestRunRefs
 from .utils import read_or_get
 from .exceptions import InvalidCredentialsError, TestCaseTypeError, TestCaseNotFoundError
-from .work_items_utils import get_test_case_url  # On DEV
+from .work_items_utils import get_uid_values
 
 logger = logging.getLogger(__file__)
 
@@ -29,6 +29,11 @@ def pytest_addoption(parser):
         dest='polarion_project_id',
         help='Polarion project id'
     )
+    group.addoption(
+        '--web-url',
+        dest='web_url',
+        help='Web link to be added to the test execution report'
+    )
 
 
 @pytest.fixture
@@ -46,6 +51,11 @@ def polarion_project_id(request):
     return request.config.option.polarion_project_id
 
 
+@pytest.fixture
+def web_url(request):
+    return request.config.option.web_url
+
+
 def pytest_configure(config):
     config.addinivalue_line(
         'markers',
@@ -54,13 +64,15 @@ def pytest_configure(config):
     Settings.POLARION_TEST_RUN = config.getoption("polarion_test_run")
     Settings.POLARION_PROJECT_ID = config.getoption("polarion_project_id")
 
-    secrets = config.getoption('secrets')
+    Settings.WEB_URL = config.getoption('web_url')
+    Settings.ALLUREDIR = config.getoption('--alluredir')
+    secrets = config.getoption('secrets')  
 
     Settings.POLARION_HOST = read_or_get(secrets, 'POLARION_HOST', '')
     Settings.POLARION_USER = read_or_get(secrets, 'POLARION_USER', '')
     Settings.POLARION_PASSWORD = read_or_get(secrets, 'POLARION_PASSWORD', '')
     Settings.POLARION_TOKEN = read_or_get(secrets, 'POLARION_TOKEN', '')
-
+    
     logger.info(
         'Polarion Server configuration:\n'
         f'\tHost: {Settings.POLARION_HOST}\n'
@@ -117,6 +129,24 @@ def pytest_terminal_summary(terminalreporter):
     project = PolarionTestRunRefs.project
     run = PolarionTestRunRefs.run
 
+    if Settings.WEB_URL is not None:
+
+        import os
+        from pathlib import Path
+
+        full_alluredir = os.path.abspath(Settings.ALLUREDIR)
+        html_path = Path(full_alluredir).parent / 'allure-html'
+
+        print("html_path:", html_path)
+        print("polarion_test_mapping:", TestExecutionResult.polarion_test_mapping)
+
+        uid_values = get_uid_values(html_path)
+
+        import sys
+        sys.exit()
+
+        # ...
+    
     for test_case_id, test_results in TestExecutionResult.result_polarion_mapping.items():
         # TODO: Add parametrize and check how this works on XRAY Plugin
         polarion_result = polarion_assertion_selection(test_results[0])
@@ -135,21 +165,23 @@ def pytest_terminal_summary(terminalreporter):
                 raise e from None
 
         # Hyperlink on Test Case - Work Items 
-        # - Remove all them and re-enter with Allure address
-        test_node = test_results[0].nodeid
-        test_case_links = test_case_item.hyperlinks
+        # Added if web-url is not NoneType
+        if Settings.WEB_URL is not None:
+            # - Remove all them and re-enter with Allure address
+            test_node = test_results[0].nodeid
+            test_case_links = test_case_item.hyperlinks
 
-        # If hyperlink list is not empty it will be clean up
-        if test_case_links is not None: 
-            hyperlinks = _process_hyperlinks_from_polarion(test_case_links)
-            for hyperlink in hyperlinks:
-                test_case_item.removeHyperlink(hyperlink)
+            # If hyperlink list is not empty it will be clean up
+            if test_case_links is not None: 
+                hyperlinks = _process_hyperlinks_from_polarion(test_case_links)
+                for hyperlink in hyperlinks:
+                    test_case_item.removeHyperlink(hyperlink)
 
-        try:  # TODO: To temp fix when the test has multiple parameters
-            test_rest_url = get_test_case_url(test_node)  # On DEV
-            test_case_item.addHyperlink(test_rest_url, Workitem.HyperlinkRoles.EXTERNAL_REF)
-        except KeyError:
-            pass
+            try:  # TODO: To temp fix when the test has multiple parameters
+                test_rest_url = get_test_case_url(Settings.WEB_URL, test_node)  # On DEV
+                test_case_item.addHyperlink(test_rest_url, Workitem.HyperlinkRoles.EXTERNAL_REF)
+            except KeyError:
+                pass
 
 
 def pytest_sessionfinish(session):

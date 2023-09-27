@@ -5,9 +5,11 @@ class Settings:
     POLARION_HOST = ''
     POLARION_USER = ''
     POLARION_PASSWORD = ''
-    # POLARION_TOKEN = ''
+    POLARION_TOKEN = ''
     POLARION_PROJECT_ID = ''
     POLARION_TEST_RUN = ''
+    WEB_URL = ''
+    ALLUREDIR = ''
 
 
 class TestExecutionResult:
