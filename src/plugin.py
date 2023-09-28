@@ -1,7 +1,7 @@
 import pytest
 import os
 from pathlib import Path
-
+import numpy as np
 from polarion.polarion import Polarion
 from polarion.record import Record
 from polarion.workitem import Workitem
@@ -144,21 +144,8 @@ def pytest_terminal_summary(terminalreporter):
         TestExecutionResult.parent_uid = parent_uid
 
     for test_case_id, test_results in TestExecutionResult.result_polarion_mapping.items():
-        # TODO: Add parametrize and check how this works on XRAY Plugin
-        polarion_result = polarion_assertion_selection(test_results[0])
         test_case_record = run.getTestCase(test_case_id)
         test_case_item = project.getWorkitem(test_case_id)
-
-        try:
-            test_case_record.setResult(polarion_result, "")
-        except Fault as fault:
-            if str(fault) == 'java.lang.UnsupportedOperationException':
-                raise TestCaseTypeError(
-                    'Test case result update failed. '
-                    'Most probably because the test type was not '
-                    'configured as "Automated Test".') from None
-            else:
-                raise e from None
 
         # Hyperlink on Test Case - Work Items 
         # Added if web-url is not NoneType
@@ -183,6 +170,27 @@ def pytest_terminal_summary(terminalreporter):
                 test_case_item.addHyperlink(test_rest_url, Workitem.HyperlinkRoles.EXTERNAL_REF)
             except KeyError as e:
                 pass
+
+        # TODO: Add parametrize and check how this works on XRAY Plugin
+        if len(test_results) > 1:  # parametrize mark
+            message, comment, polarion_result = polarion_assertion_selection_parametrize(test_results)
+        else:
+            message, comment, polarion_result = polarion_assertion_selection(test_results)
+        
+        test_case_item.addComment(message, comment)
+
+        try:
+            test_case_record.setResult(polarion_result, message)
+        except Fault as fault:
+            if str(fault) == 'java.lang.UnsupportedOperationException':
+                raise TestCaseTypeError(
+                    'Test case result update failed. '
+                    'Most probably because the test type was not '
+                    'configured as "Automated Test".') from None
+            else:
+                raise e from None
+
+        
 
 
 def pytest_sessionfinish(session):
@@ -236,11 +244,57 @@ def _authentication():
         return "TOKEN_AUTH"
 
 
-def polarion_assertion_selection(result):
+
+
+
+
+def polarion_assertion_selection_parametrize(results):
+    all_results = []
+    for result in results:
+        # print_result(result)
+        all_results.append(result.outcome == "passed")
+
+    if np.all(all_results):
+        return "Test Case PASSED (DEV)", "Test Case PASSED (DEV)", Record.ResultType.PASSED
+    else:
+        return "Test Case FAILED (DEV)", "Test Case FAILED (DEV)", Record.ResultType.FAILED  
+
+
+# def check_if_failed_or_blocked(result):
+#     if result.failed:
+#         if "AssertionError" in str(result.longrepr):
+#             print("AssertionError: Failed")
+#             print(result.longrepr)
+#         else:
+#             print("Other Error: Broken")
+#             print(result.longrepr)
+
+
+def test_case_failed_message_comment(longrepr):
+    str_longrepr = str(longrepr)
+    str_longrepr_sp = str_longrepr.split('\n')
+
+    str_longrepr_html = '<pre>' + str_longrepr + '</pre>'
+
+    message = f"Test Case FAILED ({str_longrepr_sp[-1]})"
+    comment = "Test Case FAILED: <br>" + str_longrepr_html + "<br><br>Comment from pytest-typhoon-polarion plugin"
+
+    return message, comment, Record.ResultType.FAILED
+
+
+def test_case_passed_message_comment():
+    message = "Test Case PASSED"
+    comment = "Test Case PASSED<br><br>Comment from pytest-typhoon-polarion plugin"
+
+    return message, comment, Record.ResultType.PASSED
+
+
+def polarion_assertion_selection(results):
+    result = results[0]
     if result.outcome == "passed":
-        return Record.ResultType.PASSED
+        return test_case_passed_message_comment()
     elif result.outcome == "failed":
-        return Record.ResultType.FAILED
+        return test_case_failed_message_comment(result.longrepr)
     else:
         return Record.ResultType.BLOCKED
 
