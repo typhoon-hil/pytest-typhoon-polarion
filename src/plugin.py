@@ -249,6 +249,16 @@ def _authentication():
 
 
 def polarion_assertion_selection_parametrize(results):
+    """Test Case {np.all(all_results)}:
+    [0] Passed
+    [10] Passed
+    [20] Failed
+        <code>...</code>  # Try to shift the code like here
+    [25] Passed
+    [30] Failed
+        <code>...</code>  # Try to shift the code like here
+    """
+    
     all_results = []
     for result in results:
         # print_result(result)
@@ -274,17 +284,22 @@ def test_case_failed_message_comment(longrepr):
     str_longrepr = str(longrepr)
     str_longrepr_sp = str_longrepr.split('\n')
 
-    str_longrepr_html = '<pre>' + str_longrepr + '</pre>'
+    str_longrepr_mod = '\t' + str_longrepr.replace('\n', '\n\t')
+    str_longrepr_html = (
+        'Test Case <strong>FAILED</strong>:<br><pre>' + 
+        str_longrepr_mod + 
+        '</pre><br>Comment from <strong>pytest-typhoon-polarion</strong> plugin'
+    )
 
-    message = f"Test Case FAILED ({str_longrepr_sp[-1]})"
-    comment = "Test Case FAILED: <br>" + str_longrepr_html + "<br><br>Comment from pytest-typhoon-polarion plugin"
+    message = f"Test Case <strong>FAILED</strong> ({str_longrepr_sp[-1]})"
+    comment = "" + str_longrepr_html + "<br><br>"
 
     return message, comment, Record.ResultType.FAILED
 
 
 def test_case_passed_message_comment():
-    message = "Test Case PASSED"
-    comment = "Test Case PASSED<br><br>Comment from pytest-typhoon-polarion plugin"
+    message = "Test Case <strong>PASSED</strong>"
+    comment = "Test Case <strong>PASSED</strong><br>Comment from pytest-typhoon-polarion plugin"
 
     return message, comment, Record.ResultType.PASSED
 
