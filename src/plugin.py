@@ -255,9 +255,7 @@ def _authentication():
         logger.info("Trying Polarion auth by Password")
         return "TOKEN_AUTH"
 
-
 # Assertion methods, messages, comments on Polarion Work Items
-
 
 def polarion_assertion_selection_parametrize(results):
     """Test Case {np.all(all_results)}:
@@ -269,16 +267,39 @@ def polarion_assertion_selection_parametrize(results):
     [30] Failed
         <code>...</code>  # Try to shift the code like here
     """
-    
+    import re
+
     all_results = []
+    full_comment = "{}"
+    line_comment_pat = "\n[{0}] {1}"
+
     for result in results:
-        # print_result(result)
-        all_results.append(result.outcome == "passed")
+        outcome = result.outcome == "passed"
+        outcome_str = "Passed" if outcome else "Failed"
+        all_results.append(outcome)
+
+        pattern = r'\[(.*?)\]'
+        text = result.nodeid
+        matches = re.findall(pattern, text)
+
+        full_comment = full_comment + line_comment_pat.format(
+            matches[-1],
+            outcome_str
+        )
+
+    full_comment = '<pre>' + full_comment + \
+        '</pre><br>Comment from <strong>pytest-typhoon-polarion</strong> plugin'
 
     if np.all(all_results):
-        return "Test Case PASSED (DEV)", "Test Case PASSED (DEV)", Record.ResultType.PASSED
+        message = "Test Case PASSED"
+        comment = full_comment.format(message)
+        record = Record.ResultType.PASSED    
     else:
-        return "Test Case FAILED (DEV)", "Test Case FAILED (DEV)", Record.ResultType.FAILED  
+        message = "Test Case FAILED"
+        comment = full_comment.format(message)
+        record = Record.ResultType.FAILED
+
+    return message, comment, record
 
 
 def test_case_failed_message_comment(longrepr):
