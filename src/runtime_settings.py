@@ -10,6 +10,7 @@ class Settings:
     POLARION_TEST_RUN = ''
     WEB_URL = ''
     ALLUREDIR = ''
+    ALLOW_COMMENTS = None
 
 
 class TestExecutionResult:

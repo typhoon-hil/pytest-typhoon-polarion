@@ -39,26 +39,37 @@ def pytest_addoption(parser):
         dest='web_url',
         help='Web link to be added to the test execution report'
     )
+    group.addoption(
+        '--allow-comments',
+        action="store_true",
+        dest='allow_comments',
+        help='Allow plugin to use work item comment to log test run information'
+    )
 
 
-@pytest.fixture
-def secrets(request):
-    return request.config.option.secrets
+# @pytest.fixture
+# def secrets(request):
+#     return request.config.option.secrets
 
 
-@pytest.fixture
-def polarion_test_run(request):
-    return request.config.option.polarion_test_run
+# @pytest.fixture
+# def polarion_test_run(request):
+#     return request.config.option.polarion_test_run
 
 
-@pytest.fixture
-def polarion_project_id(request):
-    return request.config.option.polarion_project_id
+# @pytest.fixture
+# def polarion_project_id(request):
+#     return request.config.option.polarion_project_id
 
 
-@pytest.fixture
-def web_url(request):
-    return request.config.option.web_url
+# @pytest.fixture
+# def web_url(request):
+#     return request.config.option.web_url
+
+
+# @pytest.fixture
+# def allow_comments(request):
+#     return request.config.option.allow_comments
 
 
 def pytest_configure(config):
@@ -70,6 +81,8 @@ def pytest_configure(config):
     Settings.POLARION_PROJECT_ID = config.getoption("polarion_project_id")
 
     Settings.WEB_URL = config.getoption('web_url')
+    Settings.ALLOW_COMMENTS = config.getoption('allow_comments')
+
     Settings.ALLUREDIR = config.getoption('--alluredir')
     secrets = config.getoption('secrets')  
 
@@ -77,7 +90,7 @@ def pytest_configure(config):
     Settings.POLARION_USER = read_or_get(secrets, 'POLARION_USER', '')
     Settings.POLARION_PASSWORD = read_or_get(secrets, 'POLARION_PASSWORD', '')
     Settings.POLARION_TOKEN = read_or_get(secrets, 'POLARION_TOKEN', '')
-    
+
     logger.info(
         'Polarion Server configuration:\n'
         f'\tHost: {Settings.POLARION_HOST}\n'
@@ -176,8 +189,9 @@ def pytest_terminal_summary(terminalreporter):
             message, comment, polarion_result = polarion_assertion_selection_parametrize(test_results)
         else:
             message, comment, polarion_result = polarion_assertion_selection(test_results)
-        
-        test_case_item.addComment(message, comment)
+
+        if Settings.ALLOW_COMMENTS:
+            test_case_item.addComment(message, comment)
 
         try:
             test_case_record.setResult(polarion_result, message)
@@ -189,8 +203,6 @@ def pytest_terminal_summary(terminalreporter):
                     'configured as "Automated Test".') from None
             else:
                 raise e from None
-
-        
 
 
 def pytest_sessionfinish(session):
@@ -223,12 +235,12 @@ def _store_item(item):
     Used in ``pytest_collection_modifyitems`` hook"""
 
     marker = _get_polarion_marker(item)
-    PolarionTestRunRefs.test_cases.append(marker.kwargs['test_id'])
 
     if not marker:
         return
 
     test_case_id = marker.kwargs['test_id']
+    PolarionTestRunRefs.test_cases.append(test_case_id)
     TestExecutionResult.polarion_test_mapping[item.nodeid] = test_case_id
     TestExecutionResult.test_polarion_mapping[test_case_id] = item.nodeid
 
@@ -244,8 +256,7 @@ def _authentication():
         return "TOKEN_AUTH"
 
 
-
-
+# Assertion methods, messages, comments on Polarion Work Items
 
 
 def polarion_assertion_selection_parametrize(results):
@@ -270,16 +281,6 @@ def polarion_assertion_selection_parametrize(results):
         return "Test Case FAILED (DEV)", "Test Case FAILED (DEV)", Record.ResultType.FAILED  
 
 
-# def check_if_failed_or_blocked(result):
-#     if result.failed:
-#         if "AssertionError" in str(result.longrepr):
-#             print("AssertionError: Failed")
-#             print(result.longrepr)
-#         else:
-#             print("Other Error: Broken")
-#             print(result.longrepr)
-
-
 def test_case_failed_message_comment(longrepr):
     str_longrepr = str(longrepr)
     str_longrepr_sp = str_longrepr.split('\n')
@@ -291,14 +292,14 @@ def test_case_failed_message_comment(longrepr):
         '</pre><br>Comment from <strong>pytest-typhoon-polarion</strong> plugin'
     )
 
-    message = f"Test Case <strong>FAILED</strong> ({str_longrepr_sp[-1]})"
+    message = f"Test Case FAILED ({str_longrepr_sp[-1]})"
     comment = "" + str_longrepr_html + "<br><br>"
 
     return message, comment, Record.ResultType.FAILED
 
 
 def test_case_passed_message_comment():
-    message = "Test Case <strong>PASSED</strong>"
+    message = "Test Case PASSED"
     comment = "Test Case <strong>PASSED</strong><br>Comment from pytest-typhoon-polarion plugin"
 
     return message, comment, Record.ResultType.PASSED
@@ -315,6 +316,8 @@ def polarion_assertion_selection(results):
 
 
 def _validation_test_run():
+    '''Check the server before test execution.
+    This is executed on ``pytest_collection_modifyitems``.'''
     run = PolarionTestRunRefs.run
 
     for test_case_id in PolarionTestRunRefs.test_cases:
@@ -330,6 +333,7 @@ def _validation_test_run():
 
 
 def _test_type_select_from_test_case(test_case_id):
+    '''Part of ``_validation_test_run`` method that executes on ``pytest_collection_modifyitems``.'''
     project = PolarionTestRunRefs.project
     test_case = project.getWorkitem(test_case_id)
 
@@ -337,6 +341,8 @@ def _test_type_select_from_test_case(test_case_id):
 
 
 def _process_hyperlinks_from_polarion(test_case_links):
+    '''Get the Hyperlinks from a Work item.
+    Used on ``pytest_terminal_summary``.'''
     hyperlinks = []
     
     for hyperlink_item in test_case_links['Hyperlink']:
