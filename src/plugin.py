@@ -227,6 +227,16 @@ def _authentication():
 # Assertion methods, messages, comments on Polarion Work Items
 
 def polarion_assertion_selection_parametrize(results):
+    """Function used on ``pytest_terminal_summary`` in case of 
+    the test result being check is marked with parametrize. The 
+    procedure add all the test cases outcome in a single string 
+    using regex expressions to get the parameter and show the 
+    outcome like:
+    
+    Test case FAILED
+    [param0-param1] Passed
+    [param2-param3] Failed
+    ..."""
     import re
 
     all_results = []
@@ -263,6 +273,7 @@ def polarion_assertion_selection_parametrize(results):
 
 
 def test_case_failed_message_comment(longrepr):
+    """Function used on ``polarion_assertion_selection``."""
     str_longrepr = str(longrepr)
     str_longrepr_sp = str_longrepr.split('\n')
 
@@ -280,6 +291,8 @@ def test_case_failed_message_comment(longrepr):
 
 
 def test_case_passed_message_comment():
+    """Function used on ``polarion_assertion_selection``."""
+
     message = "Test Case PASSED"
     comment = "Test Case <strong>PASSED</strong><br>Comment from pytest-typhoon-polarion plugin"
 
@@ -287,6 +300,8 @@ def test_case_passed_message_comment():
 
 
 def polarion_assertion_selection(results):
+    """Function used on ``pytest_terminal_summary`` in case of 
+    the test result being check is not marked with parametrize."""
     result = results[0]
     if result.outcome == "passed":
         return test_case_passed_message_comment()
@@ -297,8 +312,8 @@ def polarion_assertion_selection(results):
 
 
 def _validation_test_run():
-    '''Check the server before test execution.
-    This is executed on ``pytest_collection_modifyitems``.'''
+    """Check the server before test execution.
+    This is executed on ``pytest_collection_modifyitems``."""
     run = PolarionTestRunRefs.run
 
     for test_case_id in PolarionTestRunRefs.test_cases:
@@ -314,7 +329,8 @@ def _validation_test_run():
 
 
 def _test_type_select_from_test_case(test_case_id):
-    '''Part of ``_validation_test_run`` method that executes on ``pytest_collection_modifyitems``.'''
+    """Part of ``_validation_test_run`` method that 
+    executes on ``pytest_collection_modifyitems``."""
     project = PolarionTestRunRefs.project
     test_case = project.getWorkitem(test_case_id)
 
@@ -322,8 +338,8 @@ def _test_type_select_from_test_case(test_case_id):
 
 
 def _process_hyperlinks_from_polarion(test_case_links):
-    '''Get the Hyperlinks from a Work item.
-    Used on ``pytest_terminal_summary``.'''
+    """Get the Hyperlinks from a Work item.
+    Used on ``pytest_terminal_summary``."""
     hyperlinks = []
     
     for hyperlink_item in test_case_links['Hyperlink']:
