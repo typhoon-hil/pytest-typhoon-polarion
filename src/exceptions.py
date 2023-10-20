@@ -4,6 +4,11 @@ class PluginError(Exception):
     pass
 
 
+class ConfigurationError(PluginError):
+    """Errors in runtime configuration"""
+    pass
+
+
 class InvalidCredentialsError(PluginError):
     """Errors in polarion credentials"""
     pass
