@@ -47,31 +47,6 @@ def pytest_addoption(parser):
     )
 
 
-# @pytest.fixture
-# def secrets(request):
-#     return request.config.option.secrets
-
-
-# @pytest.fixture
-# def polarion_test_run(request):
-#     return request.config.option.polarion_test_run
-
-
-# @pytest.fixture
-# def polarion_project_id(request):
-#     return request.config.option.polarion_project_id
-
-
-# @pytest.fixture
-# def web_url(request):
-#     return request.config.option.web_url
-
-
-# @pytest.fixture
-# def allow_comments(request):
-#     return request.config.option.allow_comments
-
-
 def pytest_configure(config):
     config.addinivalue_line(
         'markers',
@@ -90,12 +65,6 @@ def pytest_configure(config):
     Settings.POLARION_USER = read_or_get(secrets, 'POLARION_USER', '')
     Settings.POLARION_PASSWORD = read_or_get(secrets, 'POLARION_PASSWORD', '')
     Settings.POLARION_TOKEN = read_or_get(secrets, 'POLARION_TOKEN', '')
-
-    logger.info(
-        'Polarion Server configuration:\n'
-        f'\tHost: {Settings.POLARION_HOST}\n'
-        f'\tUser: {Settings.POLARION_USER}'
-    )
 
     # Activate client and sync info
     try:
@@ -258,15 +227,6 @@ def _authentication():
 # Assertion methods, messages, comments on Polarion Work Items
 
 def polarion_assertion_selection_parametrize(results):
-    """Test Case {np.all(all_results)}:
-    [0] Passed
-    [10] Passed
-    [20] Failed
-        <code>...</code>  # Try to shift the code like here
-    [25] Passed
-    [30] Failed
-        <code>...</code>  # Try to shift the code like here
-    """
     import re
 
     all_results = []
