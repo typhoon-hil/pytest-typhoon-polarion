@@ -8,8 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Options for attaching allure report hyperlink and to allow logining information on Polarion Tests Cases, including parametrized tests.
+- Settings structure have more attributes for the new options.
+- New exceptions added.
 
 ### Fixed
+- Plugin check connection with Polarion before start to collect and run the tests.
+- Exceptions on Polarion side are treated properly.
 
 ### Changed
 
@@ -25,5 +30,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `--polarion-test-run=<test_run_id>`: Passes the test run id inside the project previously configured in the Polarion server.
 
 - README.md and DEMO.md documentation files created.
-
-

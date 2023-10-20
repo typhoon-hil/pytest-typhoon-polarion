@@ -51,7 +51,7 @@ Now, the **Project ID** used when created and the **Test Run ID** needs to be
 passed to the options, like:
 
 ```commandline
---polarion-project-id=<Project_id> --polarion-test-run=<TestRun_id> 
+pytest <tests_folder> --secrets=secrets --polarion-project-id=<Project_id> --polarion-test-run=<TestRun_id> 
 ```
 
 And the test cases needs to be link with the pytest test implemented, for each
@@ -67,9 +67,29 @@ def test_check_signal_Vab_freq():
     assert True
 ```
 
+### More options available
+
+Using the Work Items comments and hyperlinks can be added on Polarion the address 
+for the Allure report and the outcome result with the assertion message.
+
+Using the option `--web-url` you can point to the Allure Report placeholder,
+when running Jenkins or locally serve, and the link in the Work Item result
+will be added to the report. For example:
+
+```commandline
+typhoon-python -m pytest ... --web-url=http://localhost:8000/allure-html/
+```
+
+And in order to add extra information about the test outcome, or when the 
+test has several test cases, using the `@pytest.mark.parametrize` the option
+`--allow-comments` can be also used:
+
+```commandline
+typhoon-python -m pytest ... --allow-comments
+```
 
 ## Miscellaneous
-### How to create a token (Valid for maximum 90 days):
+### How to create a token
 Show Settings (Engine below the Pn symbol in the left-up corner) > 
 My Account > Personal Access Token (upper-center, below the page header).
 
