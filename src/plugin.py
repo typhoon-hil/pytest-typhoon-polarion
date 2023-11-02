@@ -171,7 +171,11 @@ def pytest_terminal_summary(terminalreporter):
                     'Most probably because the test type was not '
                     'configured as "Automated Test".') from None
             else:
-                raise e from None
+                """
+                The error "zeep.exceptions.Fault: com.polarion.core.util.exceptions.UserFriendlyRuntimeException: Sorry this action cannot be executed without providing an e-signature in the Polarion portal: Execution of a Test Case in the Test Run 'REL'."
+                falls here when the Test Run is not configured as "Automated".
+                """
+                raise fault from None
 
 
 def pytest_sessionfinish(session):
