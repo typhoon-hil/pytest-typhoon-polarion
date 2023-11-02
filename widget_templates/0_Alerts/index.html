@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* The alert message box */
+.alert {
+    padding: 20px;
+    background-color: #f44336;
+    color: white;
+    margin-bottom: 15px;
+    opacity: 1;
+    transition: opacity 0.6s;
+}
+
+.alert.sucess { background-color: #04AA6D; }
+
+.alert.info { background-color: #2196f3; }
+
+.alert.warning {background-color: #ff9800; }
+
+/* The close button */
+.closebtn {
+    margin-left: 15px;
+    color: white;
+    font-weight: bold;
+    float: right;
+    font-size: 22px;
+    line-height: 20px;
+    cursor: pointer;
+    transition: 0.3s; 
+}
+
+/* When moving the mouse over the close button */
+.closebtn:hover {
+    color: black;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Alert Messages</h2>
+<p>Click on the "x" symbol to close the alert message.</p>
+
+<div class="alert">
+    <span class="closebtn">&times;</span>
+    <strong>Danger!</strong> Indicates a dangerous or potentially negative action.
+</div>
+
+<div class="alert sucess">
+    <span class="closebtn">&times;</span>
+    <strong>Sucess!</strong> Indicates a sucessful or positive action.
+</div>
+
+<div class="alert info">
+    <span class="closebtn">&times;</span>
+
+    <strong>Info!</strong> Indicates a neutral informative change or action.
+</div>
+
+<div class="alert warning">
+    <span class="closebtn">&times;</span>
+
+    <strong>Warning!</strong> Indicates a warning that might need attention.
+</div>
+
+<script>
+// Get all elements with class="closebtn"
+var close = document.getElementsByClassName("closebtn");
+var i;
+
+// Loop through all close buttons
+for (i = 0; i < close.length; i++) {
+    console.log(close[i]);
+    // When someone clicks on a close button
+    close[i].onclick = function() {
+        // Get the parent of <span class="closebtn"> (<div class="alert">)
+        var div = this.parentElement;
+
+        // Set the opacity of div to 0 (transparent)
+        div.style.opacity = "0";
+
+        // Hide the div after 600ms (the same amount of milisseconds it takes to fade out)
+        setTimeout(function(){ div.style.display = "none"; }, 600);
+    }
+}
+</script>
+</body>
+</html>
+    

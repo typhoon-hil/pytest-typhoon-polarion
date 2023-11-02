@@ -1,0 +1,72 @@
+<style>
+    body {
+        box-sizing: border-box;
+        
+    }
+    
+    .column {
+        float: left;
+        width: 25%;
+        padding: 10px;
+        height: 100px;
+    }
+    
+    .row:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+    
+    /* Option 2: All columns same size */
+    .left, .right {
+        width: 20%;
+    }
+    
+    .middle {
+        width: 40%;
+    }
+    
+    .space {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+
+    @media screen and (max-width: 100px) {
+      .column {
+        width: 100%;
+      }
+    }
+
+</style>
+
+<body>
+    <div class="row space">
+        <div class="column" style="background-color:#aaa;">
+            <h4>Column 1</h4>
+            <p>Some text, col 1</p>
+        </div>
+        <div class="column" style="background-color:#bbb;">
+            <h4>Column 2</h4>
+            <p>Some text, col 2</p>
+        </div>
+        <div class="column" style="background-color:#ccc;">
+            <h4>Column 3</h4>
+            <p>Some text, col 3</p>
+        </div>
+    </div>
+    
+    <div class="row space">
+        <div class="column left" style="background-color:#aaa;">
+            <h4>Column 4</h4>
+            <p>Some text, col 4</p>
+        </div>
+        <div class="column middle" style="background-color:#bbb;">
+            <h4>Column 5</h4>
+            <p>Some text, col 5</p>
+        </div>
+        <div class="column right" style="background-color:#ccc;">
+            <h4>Column 6</h4>
+            <p>Some text, col 6</p>
+        </div>
+    </div>
+</body>

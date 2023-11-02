@@ -1,0 +1,90 @@
+<!-- <style>: This is an HTML element used to define styles for the elements within the page. -->
+<style>
+    /* .testrun-bluepanel: This is a CSS class selector. It specifies styling rules for elements 
+    with the class "testrun-bluepanel." Here are the rules for this class: */
+	.testrun-bluepanel {
+        /* background-color: The background color is set to a light blue color (#edf6ff). */
+		background-color: #edf6ff;  
+        
+        /* border-radius: It rounds the corners of the element with a radius of 5 pixels, creating a slightly rounded appearance. */
+		border-radius: 5px;
+        
+        /* margin: It centers the element horizontally within its container by setting left and right margins to "auto." */
+		margin: auto;
+        
+        /* width: The element takes up 100% of its container's width, making it full-width. */
+		width: 100%;
+        
+        /* text-align: The text content inside this element is centered.*/
+		text-align: center;
+
+        /* padding: It specifies padding values for the top, right, bottom, and left sides of the element. */
+		padding: 25px 0px 15px 0px;
+	}
+    /* .polarion-rp-inline-widget: This is another CSS class selector. It specifies styling rules for elements 
+    with the class "polarion-rp-inline-widget." In this case, it sets the display property to "inline-block," 
+    which means the elements with this class will be displayed inline (horizontally) and allow other content to 
+    flow beside them. */
+	.polarion-rp-inline-widget {
+ 		display: inline-block;
+	} 
+</style>
+<!-- 
+    <div class="testrun-bluepanel">: This is an HTML div element with the class "testrun-bluepanel." 
+    It will have the styling properties defined for the .testrun-bluepanel class. Inside this div, there is additional HTML content.
+-->
+<div class="testrun-bluepanel">
+    <!-- 
+        <span class="polarion-rp-inline-widget" data-widget="com.polarion.testRunOpenInTableButton">: 
+        This is an HTML span element with the class "polarion-rp-inline-widget." It also has a data-widget 
+        attribute set to "com.polarion.testRunOpenInTableButton." This might be part of a web application 
+        where widgets are used to add functionality or interactivity to the page. The specific functionality 
+        related to "com.polarion.testRunOpenInTableButton" would depend on the application's JavaScript code. 
+    -->
+	<span class="polarion-rp-inline-widget" data-widget="com.polarion.testRunOpenInTableButton">
+        <!-- 
+            Inside this span element, there is another span element with the class "polarion-rp-widget-parameters," 
+            and two sub elements with id attributes set to "testRun" and "sortBy." These are likely placeholders for 
+            data or parameters used by the widget, and their actual values may be populated by JavaScript or other code. 
+        -->
+		<span class="polarion-rp-widget-parameters">
+			<sub id="testRun" data-inherit="testrun"></sub>
+			<sub id="sortBy"></sub>
+		</span>
+	</span>
+    <!-- 
+        Following this, there is an unordered list (<ul>) with two list items (<li>), each containing a span element with 
+        a class similar to the previous one. These elements seem to define additional widgets or components within the 
+        page, with specific data or parameters. Again, the exact functionality and behavior of these widgets would depend on
+        the application's code. 
+    -->
+	<ul style="text-align: left;">
+		<li>
+			<span class="polarion-rp-inline-widget" data-widget="com.polarion.testRunExcelExport">
+				<span class="polarion-rp-widget-parameters">
+					<sub id="testRun" data-inherit="testrun"></sub>
+					<sub id="query">
+						<sub id="script"></sub>
+					</sub>
+					<sub id="sortBy"></sub>
+					<sub id="template"></sub>
+					<sub id="exportFileName"></sub>
+					<sub id="label"></sub>
+				</span>
+			</span>
+		</li>
+		<li>
+			<span class="polarion-rp-inline-widget" data-widget="com.polarion.testRunImportTestResults">
+				<span class="polarion-rp-widget-parameters">
+					<sub id="testRun" data-inherit="testrun"></sub>
+					<sub id="label"></sub>
+					<sub id="templateDefect">
+						<sub id="paths">
+							<sub>@current</sub>
+						</sub>
+					</sub>
+				</span>
+			</span>
+		</li>
+	</ul>
+</div>
