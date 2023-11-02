@@ -7,3 +7,5 @@ build
 pytest_typhoon_polarion.egg-info/*
 **/__pycache__/*
 **/pytestdebug.log
+pytest-typhoon-polarion.code-workspace
+.scratch_files/*
