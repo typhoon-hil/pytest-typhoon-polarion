@@ -9,3 +9,4 @@ pytest_typhoon_polarion.egg-info/*
 **/pytestdebug.log
 pytest-typhoon-polarion.code-workspace
 .scratch_files/*
+**/pytest_typhoon_polarion.egg-info/*

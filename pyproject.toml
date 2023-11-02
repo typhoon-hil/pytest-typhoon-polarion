@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pytest-typhoon-polarion"
+version = "0.0.1"
+authors = [
+    {name = "Tiarles Moralles Guterres", email = "tiarles.moralles@typhoon-hil.com"},
+]
+description = "Typhoontest plugin for Siemens Polarion"
+readme = "README.md"
+requires-python = ">3.7"
+dependencies = [
+    "typhoontest",
+    "polarion",
+]
+
+[project.entry-points."pytest11"]
+pytest-typhoon-polarion = "src.plugin"
