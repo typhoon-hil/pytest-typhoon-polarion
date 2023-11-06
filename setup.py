@@ -1,12 +1,5 @@
 from setuptools import setup
 
-import os
-import codecs
-from setuptools import setup
-
-def read(fname):
-    file_path = os.path.join(os.path.dirname(__file__), fname)
-    return codecs.open(file_path, encoding='utf-8').read()
 
 setup(
     name='pytest-typhoon-polarion',
@@ -18,8 +11,6 @@ setup(
     maintainer_email='tiarles.moralles@typhoon-hil.com',
     license='MIT',
     url='https://github.com/typhoon-hil/pytest-typhoon-polarion',
-    long_description=read('README.md'),
-    long_description_content_type='text/markdown',
     packages=['src'],
     python_requires='>=3.8',
     install_requires=[
