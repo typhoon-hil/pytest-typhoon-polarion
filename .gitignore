@@ -1,5 +1,4 @@
 build
-**/secrets
 .idea/*
 **/report/*
 **/allure-html/*
@@ -10,3 +9,6 @@ pytest_typhoon_polarion.egg-info/*
 pytest-typhoon-polarion.code-workspace
 .scratch_files/*
 **/pytest_typhoon_polarion.egg-info/*
+**/allure-results/*
+**/open_allure-results.cmd
+dist/*
