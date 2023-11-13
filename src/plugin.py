@@ -6,7 +6,7 @@ from polarion.polarion import Polarion
 from polarion.record import Record
 from polarion.workitem import Workitem
 from zeep.exceptions import Fault
-
+from requests.exceptions import SSLError
 import logging
 
 from .runtime_settings import TestExecutionResult, Settings, PolarionTestRunRefs
@@ -78,6 +78,19 @@ def pytest_configure(config):
                 polarion_url=Settings.POLARION_HOST,
                 user=Settings.POLARION_USER,
                 token=Settings.POLARION_TOKEN)
+    except SSLError:
+        if _authentication() == "PASS_AUTH":  # Password Authentication
+            client = Polarion(
+                polarion_url=Settings.POLARION_HOST,
+                user=Settings.POLARION_USER,
+                password=Settings.POLARION_PASSWORD,
+                verify_certificate=False)
+        else:  # TOKEN_AUTH
+            client = Polarion(
+                polarion_url=Settings.POLARION_HOST,
+                user=Settings.POLARION_USER,
+                token=Settings.POLARION_TOKEN,
+                verify_certificate=False)
     except Exception as e:
         if str(e) == f'Could not log in to Polarion for user {Settings.POLARION_USER}' or \
             str(e) == 'Cannot login because WSDL has no SessionWebService':
@@ -87,23 +100,6 @@ def pytest_configure(config):
                 'user, and password or token is correct.'
                 ) from None
         else:
-            try:
-                if _authentication() == "PASS_AUTH":  # Password Authentication
-                    client = Polarion(
-                        polarion_url=Settings.POLARION_HOST,
-                        user=Settings.POLARION_USER,
-                        password=Settings.POLARION_PASSWORD,
-                        verify_certificate=False)
-                else:  # TOKEN_AUTH
-                    client = Polarion(
-                        polarion_url=Settings.POLARION_HOST,
-                        user=Settings.POLARION_USER,
-                        token=Settings.POLARION_TOKEN,
-                        verify_certificate=False)
-            except Exception as e:
-                raise e from None
-            
-            
             raise e from None
 
     project = client.getProject(Settings.POLARION_PROJECT_ID)

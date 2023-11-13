@@ -1,22 +1,22 @@
 import pytest
 
-@pytest.mark.polarion(test_id="TEST-391")
+@pytest.mark.polarion(test_id="TD-391")
 def test_if_true():
     assert 5 == 5
 
 
-@pytest.mark.polarion(test_id="TEST-392")
+@pytest.mark.polarion(test_id="TD-392")
 def test_if_false():
     assert 5 == 6
 
 
-@pytest.mark.polarion(test_id="TEST-393")
+@pytest.mark.polarion(test_id="TD-393")
 @pytest.mark.parametrize('value', [0, 10, 20, 25, 30])
 def test_with_parametrize(value):
     assert True
 
 
-@pytest.mark.polarion(test_id="TEST-394")
+@pytest.mark.polarion(test_id="TD-394")
 @pytest.mark.parametrize('value', [0, 10, 20, 25, 30])
 @pytest.mark.parametrize('value2', [0, 10, 20, 25, 30])
 @pytest.mark.parametrize('value3', [0, 10, 20, 25, 30])
