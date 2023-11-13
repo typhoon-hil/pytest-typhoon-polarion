@@ -87,6 +87,23 @@ def pytest_configure(config):
                 'user, and password or token is correct.'
                 ) from None
         else:
+            try:
+                if _authentication() == "PASS_AUTH":  # Password Authentication
+                    client = Polarion(
+                        polarion_url=Settings.POLARION_HOST,
+                        user=Settings.POLARION_USER,
+                        password=Settings.POLARION_PASSWORD,
+                        verify_certificate=False)
+                else:  # TOKEN_AUTH
+                    client = Polarion(
+                        polarion_url=Settings.POLARION_HOST,
+                        user=Settings.POLARION_USER,
+                        token=Settings.POLARION_TOKEN,
+                        verify_certificate=False)
+            except Exception as e:
+                raise e from None
+            
+            
             raise e from None
 
     project = client.getProject(Settings.POLARION_PROJECT_ID)

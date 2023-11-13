@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='pytest-typhoon-polarion',
-    version='1.0.0',
+    version='1.0.1',
     description='Typhoontest plugin for Siemens Polarion',
     author='Tiarles Moralles Guterres',
     author_email='tiarles.moralles@typhoon-hil.com',
