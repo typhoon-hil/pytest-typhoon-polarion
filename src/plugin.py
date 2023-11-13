@@ -78,7 +78,7 @@ def pytest_configure(config):
                 polarion_url=Settings.POLARION_HOST,
                 user=Settings.POLARION_USER,
                 token=Settings.POLARION_TOKEN)
-    except SSLError:
+    except SSLError:  # More info about the error: https://stackoverflow.com/questions/10667960/python-requests-throwing-sslerror
         if _authentication() == "PASS_AUTH":  # Password Authentication
             client = Polarion(
                 polarion_url=Settings.POLARION_HOST,
