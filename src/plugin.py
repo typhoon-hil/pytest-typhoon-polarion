@@ -6,12 +6,12 @@ from polarion.polarion import Polarion
 from polarion.record import Record
 from polarion.workitem import Workitem
 from zeep.exceptions import Fault
-from requests.exceptions import SSLError
 import logging
 
 from .runtime_settings import TestExecutionResult, Settings, PolarionTestRunRefs
 from .utils import read_or_get
-from .exceptions import InvalidCredentialsError, TestCaseTypeError, TestCaseNotFoundError
+from .exceptions import InvalidCredentialsError, TestCaseTypeError, \
+    TestCaseNotFoundError, ConfigurationError
 from .work_items_utils import get_uid_values, get_test_case_url
 
 logger = logging.getLogger(__file__)
@@ -65,6 +65,10 @@ def pytest_configure(config):
     Settings.POLARION_USER = read_or_get(secrets, 'POLARION_USER', '')
     Settings.POLARION_PASSWORD = read_or_get(secrets, 'POLARION_PASSWORD', '')
     Settings.POLARION_TOKEN = read_or_get(secrets, 'POLARION_TOKEN', '')
+    Settings.POLARION_VERIFY_CERTIFICATE = read_or_get(secrets, 'POLARION_VERIFY_CERTIFICATE', "True")
+    Settings.POLARION_VERIFY_CERTIFICATE = _validate_verify_certificate_option(
+        Settings.POLARION_VERIFY_CERTIFICATE
+    )
 
     # Activate client and sync info
     try:
@@ -72,25 +76,15 @@ def pytest_configure(config):
             client = Polarion(
                 polarion_url=Settings.POLARION_HOST,
                 user=Settings.POLARION_USER,
-                password=Settings.POLARION_PASSWORD)
-        else:  # TOKEN_AUTH
-            client = Polarion(
-                polarion_url=Settings.POLARION_HOST,
-                user=Settings.POLARION_USER,
-                token=Settings.POLARION_TOKEN)
-    except SSLError:  # More info about the error: https://stackoverflow.com/questions/10667960/python-requests-throwing-sslerror
-        if _authentication() == "PASS_AUTH":  # Password Authentication
-            client = Polarion(
-                polarion_url=Settings.POLARION_HOST,
-                user=Settings.POLARION_USER,
                 password=Settings.POLARION_PASSWORD,
-                verify_certificate=False)
+                verify_certificate=Settings.POLARION_VERIFY_CERTIFICATE)
         else:  # TOKEN_AUTH
             client = Polarion(
                 polarion_url=Settings.POLARION_HOST,
                 user=Settings.POLARION_USER,
                 token=Settings.POLARION_TOKEN,
-                verify_certificate=False)
+                verify_certificate=Settings.POLARION_VERIFY_CERTIFICATE)
+
     except Exception as e:
         if str(e) == f'Could not log in to Polarion for user {Settings.POLARION_USER}' or \
             str(e) == 'Cannot login because WSDL has no SessionWebService':
@@ -363,3 +357,14 @@ def _process_hyperlinks_from_polarion(test_case_links):
         hyperlinks.append(hyperlink_item['uri'])
 
     return hyperlinks
+
+
+def _validate_verify_certificate_option(option: str):
+    if option.lower() == "true":
+        return True
+    elif option.lower() == "false":
+        return False
+    else:
+        raise ConfigurationError(
+            "Option used for POLARION_VERIFY_CERTIFICATE on secrets file is not valid!"
+        ) from None
