@@ -45,6 +45,7 @@ POLARION_HOST=<Polarion-Host-Location>  # If is on localhost then ``http://local
 POLARION_USER=<Username>
 POLARION_PASSWORD=<password>  # Is not needed if you have the Token
 POLARION_TOKEN=<Personal-Access-Token>
+POLARION_VERIFY_CERTIFICATE=False  # In case of HTTPS is used, SSL Error may happen and this option needs to be set as 'False'
 ```
 
 Now, the **Project ID** used when created and the **Test Run ID** needs to be passed to the options, like:

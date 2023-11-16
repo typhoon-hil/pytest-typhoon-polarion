@@ -127,6 +127,7 @@ And add the secrets file in the same folder with your user information:
 POLARION_HOST=http://localhost:80/polarion
 POLARION_USER=admin
 POLARION_PASSWORD=admin
+POLARION_VERIFY_CERTIFICATE=False  # In case of HTTPS is used, SSL Error may happen and this option needs to be set as 'False'
 ```
 
 And execute using the following command (Typhoon-HIL Control Center needs to be 

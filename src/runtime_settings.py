@@ -11,6 +11,7 @@ class Settings:
     WEB_URL = ''
     ALLUREDIR = ''
     ALLOW_COMMENTS = None
+    POLARION_VERIFY_CERTIFICATE = True
 
 
 class TestExecutionResult:
