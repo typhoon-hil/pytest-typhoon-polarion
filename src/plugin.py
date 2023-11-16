@@ -7,6 +7,7 @@ from polarion.record import Record
 from polarion.workitem import Workitem
 from zeep.exceptions import Fault
 import logging
+# import logging.config
 
 from .runtime_settings import TestExecutionResult, Settings, PolarionTestRunRefs
 from .utils import read_or_get
@@ -15,6 +16,28 @@ from .exceptions import InvalidCredentialsError, TestCaseTypeError, \
 from .work_items_utils import get_uid_values, get_test_case_url
 
 logger = logging.getLogger(__file__)
+
+
+def write_log(message, section=False, sub=True, type='a'):
+    from pathlib import Path
+    dir_path = Path().resolve()
+
+    if section:
+        pattern = "\n[{}]\n"
+    elif sub:
+        pattern = "\t{}\n"
+    else:
+        pattern = "{}\n"
+
+    if isinstance(message, str):
+        final_message = pattern.format(message)
+    elif isinstance(message, list):
+        final_message = ""
+        for each in message:
+            final_message += pattern.format(f"* {each}")
+
+    with open((dir_path / "log_plugin.txt"), type) as ftxt:
+        ftxt.write(final_message)
 
 
 def pytest_addoption(parser):
@@ -47,7 +70,7 @@ def pytest_addoption(parser):
     )
 
 
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config):
     config.addinivalue_line(
         'markers',
         'polarion(test_id): ID register on Polarion for the test case available on the Test Run')
@@ -59,7 +82,7 @@ def pytest_configure(config):
     Settings.ALLOW_COMMENTS = config.getoption('allow_comments')
 
     Settings.ALLUREDIR = config.getoption('--alluredir')
-    secrets = config.getoption('secrets')  
+    secrets = config.getoption('secrets')
 
     Settings.POLARION_HOST = read_or_get(secrets, 'POLARION_HOST', '')
     Settings.POLARION_USER = read_or_get(secrets, 'POLARION_USER', '')
@@ -70,8 +93,19 @@ def pytest_configure(config):
         Settings.POLARION_VERIFY_CERTIFICATE
     )
 
+    write_log("pytest_configure", section=True, sub=False, type='w')
+
+    write_log("Secret file configurations set:")
+
+    write_log(f"* Settings.POLARION_HOST: {Settings.POLARION_HOST}")
+    write_log(f"* Settings.POLARION_USER: {Settings.POLARION_USER}")
+    write_log(f"* Settings.POLARION_PASSWORD: {Settings.POLARION_PASSWORD}")
+    write_log(f"* Settings.POLARION_TOKEN: {Settings.POLARION_TOKEN}")
+    write_log(f"* Settings.POLARION_VERIFY_CERTIFICATE: {Settings.POLARION_VERIFY_CERTIFICATE}")
+    
     # Activate client and sync info
     try:
+        write_log(f"Authentication type used: {_authentication()}")
         if _authentication() == "PASS_AUTH":  # Password Authentication
             client = Polarion(
                 polarion_url=Settings.POLARION_HOST,
@@ -88,13 +122,23 @@ def pytest_configure(config):
     except Exception as e:
         if str(e) == f'Could not log in to Polarion for user {Settings.POLARION_USER}' or \
             str(e) == 'Cannot login because WSDL has no SessionWebService':
+            write_log(
+                f"Exception: {str(e)}: "
+                'Your credentials are not valid, check your '
+                '`secrets` file and make sure that host address '
+                'user, and password or token is correct.'
+            )
             raise InvalidCredentialsError(
                 'Your credentials are not valid, check your '
                 '`secrets` file and make sure that host address '
                 'user, and password or token is correct.'
                 ) from None
         else:
+            write_log(f"Exception: {str(e)}")
             raise e from None
+
+    write_log(f"Polarion Project ID: {Settings.POLARION_PROJECT_ID}")
+    write_log(f"Polarion Test Run ID: {Settings.POLARION_TEST_RUN}")
 
     project = client.getProject(Settings.POLARION_PROJECT_ID)
     run = project.getTestRun(Settings.POLARION_TEST_RUN)    
@@ -112,6 +156,10 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         _store_item(item)
 
+    write_log("pytest_collection_modifyitems", section=True)
+    write_log("Polarion Test Cases (based on the markers used):")
+    write_log(PolarionTestRunRefs.test_cases)
+    
     _validation_test_run()
 
 
