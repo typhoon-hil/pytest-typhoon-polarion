@@ -12,6 +12,7 @@ class Settings:
     ALLUREDIR = ''
     ALLOW_COMMENTS = None
     POLARION_VERIFY_CERTIFICATE = True
+    LOG_PATH = ''
 
 
 class TestExecutionResult:

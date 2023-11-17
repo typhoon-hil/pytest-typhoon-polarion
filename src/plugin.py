@@ -7,7 +7,6 @@ from polarion.record import Record
 from polarion.workitem import Workitem
 from zeep.exceptions import Fault
 import logging
-# import logging.config
 
 from .runtime_settings import TestExecutionResult, Settings, PolarionTestRunRefs
 from .utils import read_or_get
@@ -20,7 +19,10 @@ logger = logging.getLogger(__file__)
 
 def write_log(message, section=False, sub=True, type='a'):
     from pathlib import Path
-    dir_path = Path().resolve()
+    if Settings.LOG_PATH is None:
+        dir_path = Path().resolve()
+    else:
+        dir_path = Path(Settings.LOG_PATH).resolve()
 
     if section:
         pattern = "\n[{}]\n"
@@ -68,6 +70,11 @@ def pytest_addoption(parser):
         dest='allow_comments',
         help='Allow plugin to use work item comment to log test run information'
     )
+    group.addoption(
+        '--log-plugin-report-path',
+        dest='log_plugin_report',
+        help='Allow a log file to be created on the path pass through this option'
+    )
 
 
 def pytest_configure(config: pytest.Config):
@@ -83,6 +90,9 @@ def pytest_configure(config: pytest.Config):
 
     Settings.ALLUREDIR = config.getoption('--alluredir')
     secrets = config.getoption('secrets')
+    Settings.LOG_PATH = config.getoption('log_plugin_report')
+
+    print(f"Config: Settings.LOG_PATH: {Settings.LOG_PATH}")
 
     Settings.POLARION_HOST = read_or_get(secrets, 'POLARION_HOST', '')
     Settings.POLARION_USER = read_or_get(secrets, 'POLARION_USER', '')
@@ -102,17 +112,20 @@ def pytest_configure(config: pytest.Config):
     write_log(f"* Settings.POLARION_PASSWORD: {Settings.POLARION_PASSWORD}")
     write_log(f"* Settings.POLARION_TOKEN: {Settings.POLARION_TOKEN}")
     write_log(f"* Settings.POLARION_VERIFY_CERTIFICATE: {Settings.POLARION_VERIFY_CERTIFICATE}")
-    
+    write_log(f"* Settings.LOG_PATH: {Settings.LOG_PATH}")
+
     # Activate client and sync info
     try:
         write_log(f"Authentication type used: {_authentication()}")
         if _authentication() == "PASS_AUTH":  # Password Authentication
+            print("\nAuthentication type used:: PASS_AUTH\n")
             client = Polarion(
                 polarion_url=Settings.POLARION_HOST,
                 user=Settings.POLARION_USER,
                 password=Settings.POLARION_PASSWORD,
                 verify_certificate=Settings.POLARION_VERIFY_CERTIFICATE)
         else:  # TOKEN_AUTH
+            print("\nAuthentication type used:: TOKEN_AUTH\n")
             client = Polarion(
                 polarion_url=Settings.POLARION_HOST,
                 user=Settings.POLARION_USER,
