@@ -1,0 +1,5 @@
+[polarion]
+POLARION_VERSION="2304"  # Or 22 R2
+
+[log_file]
+ENABLE_LOG_FILE=True  # True, False or a path to save the log_file (Automatic set as True and path is used).
