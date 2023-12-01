@@ -38,7 +38,7 @@ pip install .
 ----
 ## Getting Started
 
-Get your credentials and filled the secrets file:
+Get your credentials and filled the ``secrets`` file:
 
 ```ini
 POLARION_HOST=<Polarion-Host-Location>  # If is on localhost then ``http://localhost:80/polarion``
@@ -47,6 +47,22 @@ POLARION_PASSWORD=<password>  # Is not needed if you have the Token
 POLARION_TOKEN=<Personal-Access-Token>
 POLARION_VERIFY_CERTIFICATE=False  # In case of HTTPS is used, SSL Error may happen and this option needs to be set as 'False'
 ```
+
+More recently, from version 1.0.2 is possible to configure a ``config.ini`` file and set information regarding the project and plugin functionalities.
+Here follows a list of options available through the new ``config.ini`` file and also as options, from the previous versions:
+
+| Parameter               | Description                                                                                                   | ``config.ini`` file                                             | Command-line options                          |
+|-------------------------|---------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------|-----------------------------------------------|
+| Secrets file path       | Path to the files with the user/agent credentials                                                             | * Only command-line                                             | --secrets                                     |
+| Configuration file path | Path to the files with the Polarion and plugin configuration                                                  | * Only command-line                                             | --config                                      |
+| Polarion Project ID     | ID of the project to be sync on Polarion Server                                                               | POLARION_PROJECT_ID=TestDev                                     | --polarion-project-id=TestDev                 |
+| Polarion Test Run ID    | ID for the Test Run of project configured in the previous option                                              | POLARION_TEST_RUN=REL-001                                       | --polarion-test-run=REL-001                   |
+| Comments by the plugin  | Comments that contains the assertion data for each Test Case/Work Item                                        | ALLOW_COMMENTS=True  # Section [polarion]                       | --allow-comments                              |
+| Allure URL              | The address that points to the Allure report used in the hyperlinks of each Test Case/Work Item               | WEB_URL=http://localhost:8000/allure-html/ # Section [polarion] | --web-url=http://localhost:8000/allure-html/  |
+| Polarion Version        | Informs the plugin which Polarion Server version is being used                                                | POLARION_VERSION=22 R2 or POLARION_VERSION=2304                 | Only through ``config.ini`` file              |
+| Enable Log File         | Internal log_file with information regarding configuration (Token is also log, be careful to share this data) | ENABLE_LOG_FILE=True  # Section [log_file]                      | Only through ``config.ini`` file              |
+| Log File Path           | Path to save the log file. If not inform will be used the same as the one running the tests                   | LOG_FILE_PATH=C:\User\user\Desktop  # Section [log_file]        | --log-plugin-report-path=C:\User\user\Desktop |
+
 
 Now, the **Project ID** used when created and the **Test Run ID** needs to be passed to the options, like:
 
