@@ -448,8 +448,7 @@ def _validation_test_run():
                     f'The Test Case ID "{test_case_id}" is not configured as "Automated Test".'
                 )
         else:
-            try:
-                # TODO: Remove this in the future
+            try:  # TODO: Remove this in the future
                 if Settings.ENABLE_LOG_FILE:
                     _store_test_case(test_case_id)
             except:
