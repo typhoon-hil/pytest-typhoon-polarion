@@ -39,6 +39,26 @@ def read_variable(file_name, variable_name):
         return None
 
 
+def read_variable_ini(file_name: str, variable_name: str, section="polarion"):
+    try:
+        if not file_name:
+            return None
+        parser = ConfigParser()
+        parser.read(file_name)
+
+        return parser[section][variable_name]
+
+    except IOError:
+        raise ConfigurationError(f'File could not be read: {file_name}')
+    except KeyError:
+        return None
+
+
 def read_or_get(file_name, variable_name, default_value=None):
     return read_variable(file_name, variable_name) or \
+        get_variable(variable_name, default_value)
+
+
+def read_or_get_ini(file_name, variable_name, default_value=None, section="polarion"):
+    return read_variable_ini(file_name, variable_name, section) or \
         get_variable(variable_name, default_value)

@@ -8,13 +8,44 @@ from polarion.workitem import Workitem
 from zeep.exceptions import Fault
 import logging
 
-from .runtime_settings import TestExecutionResult, Settings, PolarionTestRunRefs
-from .utils import read_or_get
+from .runtime_settings import (
+    TestExecutionResult,
+    Settings,
+    PolarionTestRunRefs,
+    Credentials
+)
+from .utils import read_or_get, read_or_get_ini
 from .exceptions import InvalidCredentialsError, TestCaseTypeError, \
     TestCaseNotFoundError, ConfigurationError
 from .work_items_utils import get_uid_values, get_test_case_url
 
 logger = logging.getLogger(__file__)
+
+
+def write_log(message, section=False, sub=True, type='a'):
+    if Settings.ENABLE_LOG_FILE:
+        from pathlib import Path
+        if Settings.LOG_PATH is None:
+            dir_path = Path().resolve()
+        else:
+            dir_path = Path(Settings.LOG_PATH).resolve()
+
+        if section:
+            pattern = "\n[{}]\n"
+        elif sub:
+            pattern = "\t{}\n"
+        else:
+            pattern = "{}\n"
+
+        if isinstance(message, str):
+            final_message = pattern.format(message)
+        elif isinstance(message, list):
+            final_message = ""
+            for each in message:
+                final_message += pattern.format(f"* {each}")
+
+        with open((dir_path / "log_plugin.txt"), type) as ftxt:
+            ftxt.write(final_message)
 
 
 def pytest_addoption(parser):
@@ -25,9 +56,9 @@ def pytest_addoption(parser):
         help='Login Information by the secrets file'
     )
     group.addoption(
-        "--polarion-test-run",
-        dest='polarion_test_run',
-        help='Polarion Test Run ID'
+        "--config",
+        dest='config_file',
+        help='Configuration file for the plugin'
     )
     group.addoption(
         "--polarion-project-id",
@@ -35,9 +66,9 @@ def pytest_addoption(parser):
         help='Polarion project id'
     )
     group.addoption(
-        '--web-url',
-        dest='web_url',
-        help='Web link to be added to the test execution report'
+        "--polarion-test-run",
+        dest='polarion_test_run',
+        help='Polarion Test Run ID'
     )
     group.addoption(
         '--allow-comments',
@@ -45,55 +76,128 @@ def pytest_addoption(parser):
         dest='allow_comments',
         help='Allow plugin to use work item comment to log test run information'
     )
+    group.addoption(
+        '--web-url',
+        dest='web_url',
+        help='Web link to be added to the test execution report'
+    )
+    # POLARION_VERSION
+    group.addoption(
+        '--log-plugin-report-path',
+        dest='log_plugin_report',
+        help='Allow a log file to be created on the path pass through this option'
+    )
 
 
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config):
     config.addinivalue_line(
         'markers',
         'polarion(test_id): ID register on Polarion for the test case available on the Test Run')
-
-    Settings.POLARION_TEST_RUN = config.getoption("polarion_test_run")
-    Settings.POLARION_PROJECT_ID = config.getoption("polarion_project_id")
-
-    Settings.WEB_URL = config.getoption('web_url')
-    Settings.ALLOW_COMMENTS = config.getoption('allow_comments')
-
+    
     Settings.ALLUREDIR = config.getoption('--alluredir')
-    secrets = config.getoption('secrets')  
 
-    Settings.POLARION_HOST = read_or_get(secrets, 'POLARION_HOST', '')
-    Settings.POLARION_USER = read_or_get(secrets, 'POLARION_USER', '')
-    Settings.POLARION_PASSWORD = read_or_get(secrets, 'POLARION_PASSWORD', '')
-    Settings.POLARION_TOKEN = read_or_get(secrets, 'POLARION_TOKEN', '')
+    secrets = config.getoption('secrets')
+    config_file = config.getoption('config_file')
+    opt_polarion_test_run = config.getoption("polarion_test_run")
+    opt_polarion_project_id = config.getoption("polarion_project_id")
+
+    write_log("pytest_configure", section=True, sub=False, type='w')
+    write_log("Getting options:")
+    write_log(f"* POLARION_TEST_RUN: {repr(opt_polarion_test_run)}")
+    write_log(f"* POLARION_PROJECT_ID: {repr(opt_polarion_project_id)}")
+    write_log(f"* WEB_URL: {repr(config.getoption('web_url'))}")
+    write_log(f"* ALLOW_COMMENTS: {repr(config.getoption('allow_comments'))}\n")
+    write_log(f"* secrets file: {repr(secrets)}")
+    write_log(f"* config_file file: {repr(config_file)}\n")
+
+    print("pytest_configure")
+    print("Getting options:")
+    print(f"* POLARION_TEST_RUN: {repr(opt_polarion_test_run)}")
+    print(f"* POLARION_PROJECT_ID: {repr(opt_polarion_project_id)}")
+    print(f"* WEB_URL: {repr(config.getoption('web_url'))}")
+    print(f"* ALLOW_COMMENTS: {repr(config.getoption('allow_comments'))}\n")
+    print(f"* secrets file: {repr(secrets)}")
+    print(f"* config_file file: {repr(config_file)}\n")
+
+    if secrets is None:
+        raise ConfigurationError(
+            '"secrets" files used by pytest-typhoon-polarion was not configured.\n'
+            'In case the plugin is not needed uninstall the package using:\n'
+            '\t"pip uninstall pytest-typhoon-polarion -y"')
+    
+    # From secrets file
+    Credentials.POLARION_HOST = read_or_get(secrets, 'POLARION_HOST', '')
+    Credentials.POLARION_USER = read_or_get(secrets, 'POLARION_USER', '')
+    Credentials.POLARION_PASSWORD = read_or_get(secrets, 'POLARION_PASSWORD', '')
+    Credentials.POLARION_TOKEN = read_or_get(secrets, 'POLARION_TOKEN', '')
+
+    Settings.LOG_FILE_PATH = read_or_get_ini(config_file, 'LOG_FILE_PATH', config.getoption('log_plugin_report'), section="log_file")
+    Settings.ENABLE_LOG_FILE = read_or_get_ini(config_file, 'ENABLE_LOG_FILE', False, section="log_file")
+
+    if Settings.ENABLE_LOG_FILE:
+        print(f"Config: Settings.LOG_PATH: {Settings.LOG_PATH}")
+    else:
+        print(f"Config: log_plugin file disabled.")
+
+    Settings.POLARION_TEST_RUN = read_or_get_ini(config_file, 'POLARION_TEST_RUN', opt_polarion_test_run, section="polarion")
+    Settings.POLARION_PROJECT_ID = read_or_get_ini(config_file, 'POLARION_PROJECT_ID', opt_polarion_project_id, section="polarion")
+    Settings.POLARION_VERSION = read_or_get_ini(config_file, 'POLARION_VERSION', "2304", section="polarion")
+
+    Settings.WEB_URL = read_or_get_ini(config_file, 'WEB_URL', config.getoption('web_url'), section='polarion') 
+    Settings.ALLOW_COMMENTS = read_or_get_ini(config_file, 'ALLOW_COMMENTS', config.getoption('allow_comments'), section='polarion')
+    
+    Settings.ALLOW_COMMENTS = _validate_boolean_option(Settings.ALLOW_COMMENTS)
+    
     Settings.POLARION_VERIFY_CERTIFICATE = read_or_get(secrets, 'POLARION_VERIFY_CERTIFICATE', "True")
-    Settings.POLARION_VERIFY_CERTIFICATE = _validate_verify_certificate_option(
-        Settings.POLARION_VERIFY_CERTIFICATE
-    )
+    Settings.POLARION_VERIFY_CERTIFICATE = _validate_boolean_option(Settings.POLARION_VERIFY_CERTIFICATE)
+
+    write_log("Secret file configurations set:")
+
+    write_log(f"* Credentials.POLARION_HOST: {Credentials.POLARION_HOST} ({type(Credentials.POLARION_HOST)})")
+    write_log(f"* Credentials.POLARION_USER: {Credentials.POLARION_USER} ({type(Credentials.POLARION_USER)})")
+    write_log(f"* Credentials.POLARION_PASSWORD: {Credentials.POLARION_PASSWORD} ({type(Credentials.POLARION_PASSWORD)})")
+    write_log(f"* Credentials.POLARION_TOKEN: {Credentials.POLARION_TOKEN} ({type(Credentials.POLARION_TOKEN)})")
+
+    write_log(f"* Settings.POLARION_VERIFY_CERTIFICATE: {Settings.POLARION_VERIFY_CERTIFICATE} ({type(Settings.POLARION_VERIFY_CERTIFICATE)})")
+    write_log(f"* Settings.POLARION_PROJECT_ID: {Settings.POLARION_PROJECT_ID} ({type(Settings.POLARION_PROJECT_ID)})")
+    write_log(f"* Settings.POLARION_TEST_RUN: {Settings.POLARION_TEST_RUN} ({type(Settings.POLARION_TEST_RUN)})")
+
+    write_log(f"* Settings.ALLOW_COMMENTS: {Settings.ALLOW_COMMENTS} ({type(Settings.ALLOW_COMMENTS)})")
+    write_log(f"* Settings.WEB_URL: {Settings.WEB_URL} ({type(Settings.WEB_URL)})")
+    write_log(f"* Settings.POLARION_VERSION: {Settings.POLARION_VERSION} ({type(Settings.POLARION_VERSION)})")
 
     # Activate client and sync info
     try:
+        write_log(f"Authentication type used: {_authentication()}")
         if _authentication() == "PASS_AUTH":  # Password Authentication
             client = Polarion(
-                polarion_url=Settings.POLARION_HOST,
-                user=Settings.POLARION_USER,
-                password=Settings.POLARION_PASSWORD,
+                polarion_url=Credentials.POLARION_HOST,
+                user=Credentials.POLARION_USER,
+                password=Credentials.POLARION_PASSWORD,
                 verify_certificate=Settings.POLARION_VERIFY_CERTIFICATE)
         else:  # TOKEN_AUTH
             client = Polarion(
-                polarion_url=Settings.POLARION_HOST,
-                user=Settings.POLARION_USER,
-                token=Settings.POLARION_TOKEN,
+                polarion_url=Credentials.POLARION_HOST,
+                user=Credentials.POLARION_USER,
+                token=Credentials.POLARION_TOKEN,
                 verify_certificate=Settings.POLARION_VERIFY_CERTIFICATE)
 
     except Exception as e:
-        if str(e) == f'Could not log in to Polarion for user {Settings.POLARION_USER}' or \
+        if str(e) == f'Could not log in to Polarion for user {Credentials.POLARION_USER}' or \
             str(e) == 'Cannot login because WSDL has no SessionWebService':
+            write_log(
+                f"Exception: {str(e)}: "
+                'Your credentials are not valid, check your '
+                '`secrets` file and make sure that host address '
+                'user, and password or token is correct.'
+            )
             raise InvalidCredentialsError(
                 'Your credentials are not valid, check your '
                 '`secrets` file and make sure that host address '
                 'user, and password or token is correct.'
                 ) from None
         else:
+            write_log(f"Exception: {str(e)}")
             raise e from None
 
     project = client.getProject(Settings.POLARION_PROJECT_ID)
@@ -112,6 +216,10 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         _store_item(item)
 
+    write_log("pytest_collection_modifyitems", section=True)
+    write_log("Polarion Test Cases (based on the markers used):")
+    write_log(PolarionTestRunRefs.test_cases)
+    
     _validation_test_run()
 
 
@@ -228,11 +336,11 @@ def _store_item(item):
 def _authentication():
     """Define if the authentication will be done by token or password.
     Used in ``pytest_terminal_summary`` hook"""
-    if Settings.POLARION_TOKEN == "":
-        logger.info("Trying Polarion auth by Token")
+    if Credentials.POLARION_TOKEN == "":
+        logger.info("Trying Polarion auth by Password")
         return "PASS_AUTH"
     else:
-        logger.info("Trying Polarion auth by Password")
+        logger.info("Trying Polarion auth by Token")
         return "TOKEN_AUTH"
 
 # Assertion methods, messages, comments on Polarion Work Items
@@ -333,10 +441,17 @@ def _validation_test_run():
                 f'The Test Case ID "{test_case_id}" was not found for the Test Run "{run.id}".'
             )
 
-        if _test_type_select_from_test_case(test_case_id) != 'automated':
-            raise TestCaseTypeError(
-                f'The Test Case ID "{test_case_id}" is not configured as "Automated Test".'
-            )
+        if Settings.POLARION_VERSION == "2304":
+            if _test_type_select_from_test_case(test_case_id) != 'automated':
+                raise TestCaseTypeError(
+                    f'The Test Case ID "{test_case_id}" is not configured as "Automated Test".'
+                )
+        else:
+            try:  # TODO: Remove this in the future
+                if Settings.ENABLE_LOG_FILE:
+                    _store_test_case(test_case_id)
+            except:
+                pass
 
 
 def _test_type_select_from_test_case(test_case_id):
@@ -344,8 +459,27 @@ def _test_type_select_from_test_case(test_case_id):
     executes on ``pytest_collection_modifyitems``."""
     project = PolarionTestRunRefs.project
     test_case = project.getWorkitem(test_case_id)
-
     return test_case.customFields['Custom'][0]['value']['id']
+
+
+def _store_test_case(test_case_id):
+    """Part of ``_validation_test_run`` method that 
+    executes on ``pytest_collection_modifyitems``."""
+    project = PolarionTestRunRefs.project
+    test_case = project.getWorkitem(test_case_id)
+    
+    from pathlib import Path
+    if Settings.LOG_PATH is None:
+        dir_path = Path().resolve()
+    else:
+        dir_path = Path(Settings.LOG_PATH).resolve()
+    
+    dir_path_full = dir_path / "logs"
+    if not dir_path_full.exists():
+        os.mkdir(dir_path_full)
+
+    with open(dir_path_full / "test_case_example.txt", 'w') as ftxt:
+        ftxt.write(repr(test_case.customFields))
 
 
 def _process_hyperlinks_from_polarion(test_case_links):
@@ -359,12 +493,17 @@ def _process_hyperlinks_from_polarion(test_case_links):
     return hyperlinks
 
 
-def _validate_verify_certificate_option(option: str):
-    if option.lower() == "true":
-        return True
-    elif option.lower() == "false":
-        return False
+def _validate_boolean_option(option):
+    if isinstance(option, bool):
+        return option
+    elif isinstance(option, str):
+        if option.lower() == "true":
+            return True
+        elif option.lower() == "false":
+            return False
+        else:
+            raise ConfigurationError(
+                "Option used for POLARION_VERIFY_CERTIFICATE on secrets file is not valid!"
+            ) from None
     else:
-        raise ConfigurationError(
-            "Option used for POLARION_VERIFY_CERTIFICATE on secrets file is not valid!"
-        ) from None
+        pass

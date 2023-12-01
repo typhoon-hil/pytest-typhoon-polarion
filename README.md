@@ -38,7 +38,7 @@ pip install .
 ----
 ## Getting Started
 
-Get your credentials and filled the secrets file:
+Get your credentials and filled the ``secrets`` file:
 
 ```ini
 POLARION_HOST=<Polarion-Host-Location>  # If is on localhost then ``http://localhost:80/polarion``
@@ -47,6 +47,23 @@ POLARION_PASSWORD=<password>  # Is not needed if you have the Token
 POLARION_TOKEN=<Personal-Access-Token>
 POLARION_VERIFY_CERTIFICATE=False  # In case of HTTPS is used, SSL Error may happen and this option needs to be set as 'False'
 ```
+
+More recently, from version 1.0.2 is possible to configure a ``config.ini`` file and set information regarding the project and plugin functionalities:
+```ini
+[polarion]
+POLARION_PROJECT_ID=TestDev
+POLARION_TEST_RUN=REL-001
+ALLOW_COMMENTS=True
+WEB_URL=http://localhost:8000/allure-html/
+POLARION_VERSION=2304
+# POLARION_VERSION="22 R2"
+
+[log_file]
+ENABLE_LOG_FILE=True
+LOG_FILE_PATH=C:\Users\user\Desktop
+```
+
+Further on this document is shown the options available and how to configure ([List of options available](#options_table))
 
 Now, the **Project ID** used when created and the **Test Run ID** needs to be passed to the options, like:
 
@@ -82,6 +99,42 @@ And in order to add extra information about the test outcome, or when the test h
 ```properties
 typhoon-python -m pytest ... --allow-comments
 ```
+
+In order to inform the ``config.ini`` file the option ``--config`` is add to the plugin:
+
+```properties
+typhoon-python -m pytest ... --config=config.ini
+```
+
+### <a name="options_table"></a> List of options available
+
+Here follows a list of options available through the new ``config.ini`` file and also as options, from the previous versions:
+
+| Parameter               | ``config.ini`` file                       | ``config.ini`` section | Command-line options                          |
+|-------------------------|-------------------------------------------|------------------------|-----------------------------------------------|
+| Secrets file path       | (*) Only command-line                     | -                      | --secrets                                     |
+| Configuration file path | Only command-line                         | -                      | --config                                      |
+| Polarion Project ID     | POLARION_PROJECT_ID=TestDev               | [polarion]             | --polarion-project-id=TestDev                 |
+| Polarion Test Run ID    | POLARION_TEST_RUN=REL-001                 | [polarion]             | --polarion-test-run=REL-001                   |
+| Comments by the plugin  | ALLOW_COMMENTS=True                       | [polarion]             | --allow-comments                              |
+| Allure URL              | WEB_URL=http://localhost:8000/allure-html | [polarion]             | --web-url=http://localhost:8000/allure-html/  |
+| Polarion Version        | POLARION_VERSION=22 R2                    | [polarion]             | Only through ``config.ini`` file              |
+| Enable Log File         | ENABLE_LOG_FILE=True                      | [log_file]             | Only through ``config.ini`` file              |
+| Log File Path           | LOG_FILE_PATH=C:\Users\user\Desktop       | [log_file]             | --log-plugin-report-path=C:\User\user\Desktop |
+
+(*) This option is mandatory.
+
+**Description:**
+
+* **Secrets file path**: Path to the files with the user/agent credentials.
+* **Configuration file path**: Path to the files with the Polarion and plugin configuration.
+* **Polarion Project ID**: ID of the project to be sync on Polarion Server.
+* **Polarion Test Run ID**: ID for the Test Run of project configured in the previous option.
+* **Comments by the plugin**: Comments that contains the assertion data for each Test Case/Work Item.
+* **Allure URL**: The address that points to the Allure report used in the hyperlinks of each Test Case/Work Item.
+* **Polarion Version**: Informs the plugin which Polarion Server version is being used.
+* **Enable Log File**: Internal log_file with information regarding configuration (**Warning:** The token info is also logged, be careful to share this data).
+* **Log File Path**: Path to save the log file. If not inform will be used the same as the one running the tests.
 
 ## Miscellaneous
 ### How to create a token
