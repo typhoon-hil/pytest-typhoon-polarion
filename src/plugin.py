@@ -7,7 +7,6 @@ from polarion.record import Record
 from polarion.workitem import Workitem
 from zeep.exceptions import Fault
 import logging
-# import logging.config
 
 from .runtime_settings import (
     TestExecutionResult,
