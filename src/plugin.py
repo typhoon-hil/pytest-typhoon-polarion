@@ -252,7 +252,7 @@ def pytest_terminal_summary(terminalreporter):
             test_node = test_results[0].nodeid
             test_case_links = test_case_item.hyperlinks
 
-            # If hyperlink list is not e409mpty it will be clean up
+            # If hyperlink list is not empty it will be clean up
             if test_case_links is not None: 
                 hyperlinks = _process_hyperlinks_from_polarion(test_case_links)
                 for hyperlink in hyperlinks:
