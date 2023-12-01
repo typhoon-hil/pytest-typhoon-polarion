@@ -3,7 +3,7 @@
 
 ## Pytest plugin for integration with Siemens Polarion
 
-This plugin is part of [pytest framework](https://docs.pytest.org/) integration with Siemens Polarion developed by Typhoon HIL. Developed on top of [an open-source Polarion project](https://pypi.org/project/polarion/).
+This plugin is part of [pytest framework](https://docs.pytest.org/) integration with Siemens Polarion developed by Typhoon HIL. Developed on top of [an open-source Polarion project](https://pypi.org/project/polarion/). **Developed using Siemens Polarion ALM 2304 version**.
 
 On Polarion struct the template used was ``Agile Software Project (Product and Release Backlogs, Sprint Management, Quality Assurance, Builds)``. On this template is possible to write ``Test Cases`` and also to create ``Test Runs`` with the tests case selected.
 
