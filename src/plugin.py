@@ -95,6 +95,12 @@ def pytest_configure(config: pytest.Config):
 
     secrets = config.getoption('secrets')
     settings = config.getoption('config_file')
+
+    if secrets is None:
+        raise ConfigurationError(
+            '"secrets" files used by pytest-typhoon-polarion was not configured.\n'
+            'In case the plugin is not needed uninstall the package using:\n'
+            '\t"pip uninstall pytest-typhoon-polarion -y"')
     
     # From secrets file
     Credentials.POLARION_HOST = read_or_get(secrets, 'POLARION_HOST', '')
