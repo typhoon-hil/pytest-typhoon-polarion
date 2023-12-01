@@ -106,7 +106,7 @@ Here follows a list of options available through the new ``config.ini`` file and
 | Parameter               | ``config.ini`` file                       | ``config.ini`` section | Command-line options                          |
 |-------------------------|-------------------------------------------|------------------------|-----------------------------------------------|
 | Secrets file path       | (*) Only command-line                     | -                      | --secrets                                     |
-| Configuration file path | (*) Only command-line                     | -                      | --config                                      |
+| Configuration file path | Only command-line                         | -                      | --config                                      |
 | Polarion Project ID     | POLARION_PROJECT_ID=TestDev               | [polarion]             | --polarion-project-id=TestDev                 |
 | Polarion Test Run ID    | POLARION_TEST_RUN=REL-001                 | [polarion]             | --polarion-test-run=REL-001                   |
 | Comments by the plugin  | ALLOW_COMMENTS=True                       | [polarion]             | --allow-comments                              |
@@ -115,7 +115,7 @@ Here follows a list of options available through the new ``config.ini`` file and
 | Enable Log File         | ENABLE_LOG_FILE=True                      | [log_file]             | Only through ``config.ini`` file              |
 | Log File Path           | LOG_FILE_PATH=C:\Users\user\Desktop       | [log_file]             | --log-plugin-report-path=C:\User\user\Desktop |
 
-(*) This options are mandatory.
+(*) This option is mandatory.
 
 **Description:**
 
