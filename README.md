@@ -100,6 +100,12 @@ And in order to add extra information about the test outcome, or when the test h
 typhoon-python -m pytest ... --allow-comments
 ```
 
+In order to inform the ``config.ini`` file the option ``--config`` is add to the plugin:
+
+```properties
+typhoon-python -m pytest ... --config=config.ini
+```
+
 ### <a name="options_table"></a> List of options available
 
 Here follows a list of options available through the new ``config.ini`` file and also as options, from the previous versions:
