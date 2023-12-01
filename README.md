@@ -126,15 +126,15 @@ Here follows a list of options available through the new ``config.ini`` file and
 
 **Description:**
 
-* **Secrets file path**: Path to the files with the user/agent credentials                                                            
-* **Configuration file path**: Path to the files with the Polarion and plugin configuration                                                 
-* **Polarion Project ID**: ID of the project to be sync on Polarion Server                                                              
-* **Polarion Test Run ID**: ID for the Test Run of project configured in the previous option                                             
-* **Comments by the plugin**: Comments that contains the assertion data for each Test Case/Work Item                                       
-* **Allure URL**: The address that points to the Allure report used in the hyperlinks of each Test Case/Work Item              
-* **Polarion Version**: Informs the plugin which Polarion Server version is being used                                               
-* **Enable Log File**: Internal log_file with information regarding configuration (Token is also log, be careful to share this data)
-* **Log File Path**: Path to save the log file. If not inform will be used the same as the one running the tests   
+* **Secrets file path**: Path to the files with the user/agent credentials.
+* **Configuration file path**: Path to the files with the Polarion and plugin configuration.
+* **Polarion Project ID**: ID of the project to be sync on Polarion Server.
+* **Polarion Test Run ID**: ID for the Test Run of project configured in the previous option.
+* **Comments by the plugin**: Comments that contains the assertion data for each Test Case/Work Item.
+* **Allure URL**: The address that points to the Allure report used in the hyperlinks of each Test Case/Work Item.
+* **Polarion Version**: Informs the plugin which Polarion Server version is being used.
+* **Enable Log File**: Internal log_file with information regarding configuration (**Warning:** The token info is also logged, be careful to share this data).
+* **Log File Path**: Path to save the log file. If not inform will be used the same as the one running the tests.
 
 ## Miscellaneous
 ### How to create a token
