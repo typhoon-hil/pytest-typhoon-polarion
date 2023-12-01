@@ -15,7 +15,7 @@ from .runtime_settings import (
     PolarionTestRunRefs,
     Credentials
 )
-from .utils import read_or_get
+from .utils import read_or_get, read_or_get_ini
 from .exceptions import InvalidCredentialsError, TestCaseTypeError, \
     TestCaseNotFoundError, ConfigurationError
 from .work_items_utils import get_uid_values, get_test_case_url
@@ -24,25 +24,29 @@ logger = logging.getLogger(__file__)
 
 
 def write_log(message, section=False, sub=True, type='a'):
-    from pathlib import Path
-    dir_path = Path().resolve()
+    if Settings.ENABLE_LOG_FILE:
+        from pathlib import Path
+        if Settings.LOG_PATH is None:
+            dir_path = Path().resolve()
+        else:
+            dir_path = Path(Settings.LOG_PATH).resolve()
 
-    if section:
-        pattern = "\n[{}]\n"
-    elif sub:
-        pattern = "\t{}\n"
-    else:
-        pattern = "{}\n"
+        if section:
+            pattern = "\n[{}]\n"
+        elif sub:
+            pattern = "\t{}\n"
+        else:
+            pattern = "{}\n"
 
-    if isinstance(message, str):
-        final_message = pattern.format(message)
-    elif isinstance(message, list):
-        final_message = ""
-        for each in message:
-            final_message += pattern.format(f"* {each}")
+        if isinstance(message, str):
+            final_message = pattern.format(message)
+        elif isinstance(message, list):
+            final_message = ""
+            for each in message:
+                final_message += pattern.format(f"* {each}")
 
-    with open((dir_path / "log_plugin.txt"), type) as ftxt:
-        ftxt.write(final_message)
+        with open((dir_path / "log_plugin.txt"), type) as ftxt:
+            ftxt.write(final_message)
 
 
 def pytest_addoption(parser):
@@ -94,7 +98,27 @@ def pytest_configure(config: pytest.Config):
     Settings.ALLUREDIR = config.getoption('--alluredir')
 
     secrets = config.getoption('secrets')
-    settings = config.getoption('config_file')
+    config_file = config.getoption('config_file')
+    opt_polarion_test_run = config.getoption("polarion_test_run")
+    opt_polarion_project_id = config.getoption("polarion_project_id")
+
+    write_log("pytest_configure", section=True, sub=False, type='w')
+    write_log("Getting options:")
+    write_log(f"* POLARION_TEST_RUN: {repr(opt_polarion_test_run)}")
+    write_log(f"* POLARION_PROJECT_ID: {repr(opt_polarion_project_id)}")
+    write_log(f"* WEB_URL: {repr(config.getoption('web_url'))}")
+    write_log(f"* ALLOW_COMMENTS: {repr(config.getoption('allow_comments'))}\n")
+    write_log(f"* secrets file: {repr(secrets)}")
+    write_log(f"* config_file file: {repr(config_file)}\n")
+
+    print("pytest_configure")
+    print("Getting options:")
+    print(f"* POLARION_TEST_RUN: {repr(opt_polarion_test_run)}")
+    print(f"* POLARION_PROJECT_ID: {repr(opt_polarion_project_id)}")
+    print(f"* WEB_URL: {repr(config.getoption('web_url'))}")
+    print(f"* ALLOW_COMMENTS: {repr(config.getoption('allow_comments'))}\n")
+    print(f"* secrets file: {repr(secrets)}")
+    print(f"* config_file file: {repr(config_file)}\n")
 
     if secrets is None:
         raise ConfigurationError(
@@ -108,38 +132,41 @@ def pytest_configure(config: pytest.Config):
     Credentials.POLARION_PASSWORD = read_or_get(secrets, 'POLARION_PASSWORD', '')
     Credentials.POLARION_TOKEN = read_or_get(secrets, 'POLARION_TOKEN', '')
 
-    opt_polarion_test_run = config.getoption("polarion_test_run")
-    opt_polarion_project_id = config.getoption("polarion_project_id")
+    Settings.LOG_FILE_PATH = read_or_get_ini(config_file, 'LOG_FILE_PATH', config.getoption('log_plugin_report'), section="log_file")
+    Settings.ENABLE_LOG_FILE = read_or_get_ini(config_file, 'ENABLE_LOG_FILE', False, section="log_file")
 
-    write_log("pytest_configure", section=True, sub=False, type='w')
-    write_log("Getting options:")
-    write_log(f"* POLARION_TEST_RUN: {repr(opt_polarion_test_run)}")
-    write_log(f"* POLARION_PROJECT_ID: {repr(opt_polarion_project_id)}")
+    if Settings.ENABLE_LOG_FILE:
+        print(f"Config: Settings.LOG_PATH: {Settings.LOG_PATH}")
+    else:
+        print(f"Config: log_plugin file disabled.")
 
-    # if opt_polarion_test_run == None:
-        # Settings.POLARION_TEST_RUN = read_or_get(settings, 'POLARION_TEST_RUN', '')
-    # if opt_polarion_project_id == None:
-        # Settings.POLARION_PROJECT_ID = read_or_get(settings, 'POLARION_PROJECT_ID', '')
+    Settings.POLARION_TEST_RUN = read_or_get_ini(config_file, 'POLARION_TEST_RUN', opt_polarion_test_run, section="polarion")
+    Settings.POLARION_PROJECT_ID = read_or_get_ini(config_file, 'POLARION_PROJECT_ID', opt_polarion_project_id, section="polarion")
+    Settings.POLARION_VERSION = read_or_get_ini(config_file, 'POLARION_VERSION', "2304", section="polarion")
 
-    Settings.POLARION_TEST_RUN = read_or_get(settings, 'POLARION_TEST_RUN', opt_polarion_test_run)
-    Settings.POLARION_PROJECT_ID = read_or_get(settings, 'POLARION_PROJECT_ID', opt_polarion_project_id)
-
-    Settings.WEB_URL = config.getoption('web_url')
-    Settings.ALLOW_COMMENTS = config.getoption('allow_comments')
+    Settings.WEB_URL = read_or_get_ini(config_file, 'WEB_URL', config.getoption('web_url'), section='polarion') 
+    Settings.ALLOW_COMMENTS = read_or_get_ini(config_file, 'ALLOW_COMMENTS', config.getoption('allow_comments'), section='polarion')
+    
+    Settings.ALLOW_COMMENTS = _validate_boolean_option(Settings.ALLOW_COMMENTS)
     
     Settings.POLARION_VERIFY_CERTIFICATE = read_or_get(secrets, 'POLARION_VERIFY_CERTIFICATE', "True")
-    Settings.POLARION_VERIFY_CERTIFICATE = _validate_verify_certificate_option(
-        Settings.POLARION_VERIFY_CERTIFICATE
-    )
+    Settings.POLARION_VERIFY_CERTIFICATE = _validate_boolean_option(Settings.POLARION_VERIFY_CERTIFICATE)
 
     write_log("Secret file configurations set:")
 
-    write_log(f"* Credentials.POLARION_HOST: {Credentials.POLARION_HOST}")
-    write_log(f"* Credentials.POLARION_USER: {Credentials.POLARION_USER}")
-    write_log(f"* Credentials.POLARION_PASSWORD: {Credentials.POLARION_PASSWORD}")
-    write_log(f"* Credentials.POLARION_TOKEN: {Credentials.POLARION_TOKEN}")
-    write_log(f"* Settings.POLARION_VERIFY_CERTIFICATE: {Settings.POLARION_VERIFY_CERTIFICATE}")
-    
+    write_log(f"* Credentials.POLARION_HOST: {Credentials.POLARION_HOST} ({type(Credentials.POLARION_HOST)})")
+    write_log(f"* Credentials.POLARION_USER: {Credentials.POLARION_USER} ({type(Credentials.POLARION_USER)})")
+    write_log(f"* Credentials.POLARION_PASSWORD: {Credentials.POLARION_PASSWORD} ({type(Credentials.POLARION_PASSWORD)})")
+    write_log(f"* Credentials.POLARION_TOKEN: {Credentials.POLARION_TOKEN} ({type(Credentials.POLARION_TOKEN)})")
+
+    write_log(f"* Settings.POLARION_VERIFY_CERTIFICATE: {Settings.POLARION_VERIFY_CERTIFICATE} ({type(Settings.POLARION_VERIFY_CERTIFICATE)})")
+    write_log(f"* Settings.POLARION_PROJECT_ID: {Settings.POLARION_PROJECT_ID} ({type(Settings.POLARION_PROJECT_ID)})")
+    write_log(f"* Settings.POLARION_TEST_RUN: {Settings.POLARION_TEST_RUN} ({type(Settings.POLARION_TEST_RUN)})")
+
+    write_log(f"* Settings.ALLOW_COMMENTS: {Settings.ALLOW_COMMENTS} ({type(Settings.ALLOW_COMMENTS)})")
+    write_log(f"* Settings.WEB_URL: {Settings.WEB_URL} ({type(Settings.WEB_URL)})")
+    write_log(f"* Settings.POLARION_VERSION: {Settings.POLARION_VERSION} ({type(Settings.POLARION_VERSION)})")
+
     # Activate client and sync info
     try:
         write_log(f"Authentication type used: {_authentication()}")
@@ -173,9 +200,6 @@ def pytest_configure(config: pytest.Config):
         else:
             write_log(f"Exception: {str(e)}")
             raise e from None
-
-    write_log(f"Polarion Project ID: {Settings.POLARION_PROJECT_ID}")
-    write_log(f"Polarion Test Run ID: {Settings.POLARION_TEST_RUN}")
 
     project = client.getProject(Settings.POLARION_PROJECT_ID)
     run = project.getTestRun(Settings.POLARION_TEST_RUN)    
@@ -445,12 +469,17 @@ def _process_hyperlinks_from_polarion(test_case_links):
     return hyperlinks
 
 
-def _validate_verify_certificate_option(option: str):
-    if option.lower() == "true":
-        return True
-    elif option.lower() == "false":
-        return False
+def _validate_boolean_option(option):
+    if isinstance(option, bool):
+        return option
+    elif isinstance(option, str):
+        if option.lower() == "true":
+            return True
+        elif option.lower() == "false":
+            return False
+        else:
+            raise ConfigurationError(
+                "Option used for POLARION_VERIFY_CERTIFICATE on secrets file is not valid!"
+            ) from None
     else:
-        raise ConfigurationError(
-            "Option used for POLARION_VERIFY_CERTIFICATE on secrets file is not valid!"
-        ) from None
+        pass
