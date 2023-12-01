@@ -55,11 +55,12 @@ POLARION_PROJECT_ID=TestDev
 POLARION_TEST_RUN=REL-001
 ALLOW_COMMENTS=True
 WEB_URL=http://localhost:8000/allure-html/
-POLARION_VERSION=2304  # Or "22 R2"
+POLARION_VERSION=2304
+# POLARION_VERSION="22 R2"
 
 [log_file]
-ENABLE_LOG_FILE=True  # True or False
-LOG_FILE_PATH=C:\Users\user\Desktop  # Folder path
+ENABLE_LOG_FILE=True
+LOG_FILE_PATH=C:\Users\user\Desktop
 ```
 
 Further on this document is shown the options available and how to configure ([List of options available](#options_table))

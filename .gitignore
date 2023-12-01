@@ -13,3 +13,5 @@ pytest-typhoon-polarion.code-workspace
 **/open_allure-results.cmd
 dist/*
 .tox/*
+**/logs/*
+**/log_plugin.txt

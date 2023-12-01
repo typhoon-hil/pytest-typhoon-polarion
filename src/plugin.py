@@ -447,6 +447,13 @@ def _validation_test_run():
                 raise TestCaseTypeError(
                     f'The Test Case ID "{test_case_id}" is not configured as "Automated Test".'
                 )
+        else:
+            try:
+                # TODO: Remove this in the future
+                if Settings.ENABLE_LOG_FILE:
+                    _store_test_case(test_case_id)
+            except:
+                pass
 
 
 def _test_type_select_from_test_case(test_case_id):
@@ -454,8 +461,27 @@ def _test_type_select_from_test_case(test_case_id):
     executes on ``pytest_collection_modifyitems``."""
     project = PolarionTestRunRefs.project
     test_case = project.getWorkitem(test_case_id)
-
     return test_case.customFields['Custom'][0]['value']['id']
+
+
+def _store_test_case(test_case_id):
+    """Part of ``_validation_test_run`` method that 
+    executes on ``pytest_collection_modifyitems``."""
+    project = PolarionTestRunRefs.project
+    test_case = project.getWorkitem(test_case_id)
+    
+    from pathlib import Path
+    if Settings.LOG_PATH is None:
+        dir_path = Path().resolve()
+    else:
+        dir_path = Path(Settings.LOG_PATH).resolve()
+    
+    dir_path_full = dir_path / "logs"
+    if not dir_path_full.exists():
+        os.mkdir(dir_path_full)
+
+    with open(dir_path_full / "test_case_example.txt", 'w') as ftxt:
+        ftxt.write(repr(test_case.customFields))
 
 
 def _process_hyperlinks_from_polarion(test_case_links):
