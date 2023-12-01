@@ -53,9 +53,9 @@ def pytest_addoption(parser):
         help='Login Information by the secrets file'
     )
     group.addoption(
-        "--polarion-test-run",
-        dest='polarion_test_run',
-        help='Polarion Test Run ID'
+        "--config",
+        dest='config_file',
+        help='Configuration file for the plugin'
     )
     group.addoption(
         "--polarion-project-id",
@@ -63,9 +63,9 @@ def pytest_addoption(parser):
         help='Polarion project id'
     )
     group.addoption(
-        '--web-url',
-        dest='web_url',
-        help='Web link to be added to the test execution report'
+        "--polarion-test-run",
+        dest='polarion_test_run',
+        help='Polarion Test Run ID'
     )
     group.addoption(
         '--allow-comments',
@@ -74,9 +74,15 @@ def pytest_addoption(parser):
         help='Allow plugin to use work item comment to log test run information'
     )
     group.addoption(
-        "--config",
-        dest='config_file',
-        help='Configuration file for the plugin'
+        '--web-url',
+        dest='web_url',
+        help='Web link to be added to the test execution report'
+    )
+    # POLARION_VERSION
+    group.addoption(
+        '--log-plugin-report-path',
+        dest='log_plugin_report',
+        help='Allow a log file to be created on the path pass through this option'
     )
 
 
