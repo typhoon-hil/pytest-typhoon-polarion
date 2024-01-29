@@ -81,10 +81,14 @@ def pytest_addoption(parser):
         dest='web_url',
         help='Web link to be added to the test execution report'
     )
-    # POLARION_VERSION
     group.addoption(
         '--log-plugin-report-path',
         dest='log_plugin_report',
+        help='Allow a log file to be created on the path pass through this option'
+    )
+    group.addoption(
+        '--user-comments',
+        dest='user_comments',
         help='Allow a log file to be created on the path pass through this option'
     )
 
@@ -109,15 +113,6 @@ def pytest_configure(config: pytest.Config):
     write_log(f"* ALLOW_COMMENTS: {repr(config.getoption('allow_comments'))}\n")
     write_log(f"* secrets file: {repr(secrets)}")
     write_log(f"* config_file file: {repr(config_file)}\n")
-
-    print("pytest_configure")
-    print("Getting options:")
-    print(f"* POLARION_TEST_RUN: {repr(opt_polarion_test_run)}")
-    print(f"* POLARION_PROJECT_ID: {repr(opt_polarion_project_id)}")
-    print(f"* WEB_URL: {repr(config.getoption('web_url'))}")
-    print(f"* ALLOW_COMMENTS: {repr(config.getoption('allow_comments'))}\n")
-    print(f"* secrets file: {repr(secrets)}")
-    print(f"* config_file file: {repr(config_file)}\n")
 
     if secrets is None:
         raise ConfigurationError(
@@ -150,6 +145,8 @@ def pytest_configure(config: pytest.Config):
     
     Settings.POLARION_VERIFY_CERTIFICATE = read_or_get(secrets, 'POLARION_VERIFY_CERTIFICATE', "True")
     Settings.POLARION_VERIFY_CERTIFICATE = _validate_boolean_option(Settings.POLARION_VERIFY_CERTIFICATE)
+    
+    Settings.USER_COMMENTS = read_or_get_ini(config_file, 'USER_COMMENTS', config.getoption('user_comments'), section="polarion")
 
     write_log("Secret file configurations set:")
 
@@ -165,6 +162,7 @@ def pytest_configure(config: pytest.Config):
     write_log(f"* Settings.ALLOW_COMMENTS: {Settings.ALLOW_COMMENTS} ({type(Settings.ALLOW_COMMENTS)})")
     write_log(f"* Settings.WEB_URL: {Settings.WEB_URL} ({type(Settings.WEB_URL)})")
     write_log(f"* Settings.POLARION_VERSION: {Settings.POLARION_VERSION} ({type(Settings.POLARION_VERSION)})")
+    write_log(f"* Settings.USER_COMMENTS: {Settings.USER_COMMENTS} ({type(Settings.USER_COMMENTS)})")
 
     # Activate client and sync info
     try:
@@ -275,6 +273,9 @@ def pytest_terminal_summary(terminalreporter):
             message, comment, polarion_result = polarion_assertion_selection(test_results)
 
         if Settings.ALLOW_COMMENTS:
+            if Settings.USER_COMMENTS is not None or Settings.USER_COMMENTS != '':
+                user_comment = Settings.USER_COMMENTS.replace(r"\n", "<br>")
+                comment = f"<strong>User Comment:</strong><br>{user_comment}<br><br>{comment}"
             test_case_item.addComment(message, comment)
 
         try:
