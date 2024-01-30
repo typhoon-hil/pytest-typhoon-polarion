@@ -22,7 +22,7 @@ from .work_items_utils import get_uid_values, get_test_case_url
 from .hooks_utils.logs import write_log
 from .hooks_utils import logs as _logs
 
-
+from .hooks_utils import configure as _configure
 
 logger = logging.getLogger(__file__)
 
@@ -76,96 +76,24 @@ def pytest_configure(config: pytest.Config):
     config.addinivalue_line(
         'markers',
         'polarion(test_id): ID register on Polarion for the test case available on the Test Run')
-    
-    Settings.ALLUREDIR = config.getoption('--alluredir')
+        
+    _logs.logging_get_options(config)
 
     secrets = config.getoption('secrets')
-    config_file = config.getoption('config_file')
-    opt_polarion_test_run = config.getoption("polarion_test_run")
-    opt_polarion_project_id = config.getoption("polarion_project_id")
-
-    _logs.logging_get_options(config)
 
     if secrets is None:
         raise ConfigurationError(
             '"secrets" files used by pytest-typhoon-polarion was not configured.\n'
             'In case the plugin is not needed uninstall the package using:\n'
             '\t"pip uninstall pytest-typhoon-polarion -y"')
-    
-    # From secrets file
-    Credentials.POLARION_HOST = read_or_get(secrets, 'POLARION_HOST', '')
-    Credentials.POLARION_USER = read_or_get(secrets, 'POLARION_USER', '')
-    Credentials.POLARION_PASSWORD = read_or_get(secrets, 'POLARION_PASSWORD', '')
-    Credentials.POLARION_TOKEN = read_or_get(secrets, 'POLARION_TOKEN', '')
 
-    Settings.LOG_FILE_PATH = read_or_get_ini(config_file, 'LOG_FILE_PATH', config.getoption('log_plugin_report'), section="log_file")
-    Settings.ENABLE_LOG_FILE = read_or_get_ini(config_file, 'ENABLE_LOG_FILE', False, section="log_file")
-
-    if Settings.ENABLE_LOG_FILE:
-        print(f"Config: Settings.LOG_PATH: {Settings.LOG_PATH}")
-    else:
-        print(f"Config: log_plugin file disabled.")
-
-    Settings.POLARION_TEST_RUN = read_or_get_ini(config_file, 'POLARION_TEST_RUN', opt_polarion_test_run, section="polarion")
-    Settings.POLARION_PROJECT_ID = read_or_get_ini(config_file, 'POLARION_PROJECT_ID', opt_polarion_project_id, section="polarion")
-    Settings.POLARION_VERSION = read_or_get_ini(config_file, 'POLARION_VERSION', "2304", section="polarion")
-
-    Settings.WEB_URL = read_or_get_ini(config_file, 'WEB_URL', config.getoption('web_url'), section='polarion') 
-    Settings.ALLOW_COMMENTS = read_or_get_ini(config_file, 'ALLOW_COMMENTS', config.getoption('allow_comments'), section='polarion')
-    
-    Settings.ALLOW_COMMENTS = _validate_boolean_option(Settings.ALLOW_COMMENTS)
-    
-    Settings.POLARION_VERIFY_CERTIFICATE = read_or_get(secrets, 'POLARION_VERIFY_CERTIFICATE', "True")
-    Settings.POLARION_VERIFY_CERTIFICATE = _validate_boolean_option(Settings.POLARION_VERIFY_CERTIFICATE)
-    
-    Settings.USER_COMMENTS = read_or_get_ini(config_file, 'USER_COMMENTS', config.getoption('user_comments'), section="polarion")
+    _configure.set_init_files_config(config)
 
     _logs.logging_secret_file_config()
 
+    _configure.connect_polarion_server()
 
-
-
-    # Activate client and sync info
-    try:
-        write_log(f"Authentication type used: {_authentication()}")
-        if _authentication() == "PASS_AUTH":  # Password Authentication
-            client = Polarion(
-                polarion_url=Credentials.POLARION_HOST,
-                user=Credentials.POLARION_USER,
-                password=Credentials.POLARION_PASSWORD,
-                verify_certificate=Settings.POLARION_VERIFY_CERTIFICATE)
-        else:  # TOKEN_AUTH
-            client = Polarion(
-                polarion_url=Credentials.POLARION_HOST,
-                user=Credentials.POLARION_USER,
-                token=Credentials.POLARION_TOKEN,
-                verify_certificate=Settings.POLARION_VERIFY_CERTIFICATE)
-
-    except Exception as e:
-        if str(e) == f'Could not log in to Polarion for user {Credentials.POLARION_USER}' or \
-            str(e) == 'Cannot login because WSDL has no SessionWebService':
-            write_log(
-                f"Exception: {str(e)}: "
-                'Your credentials are not valid, check your '
-                '`secrets` file and make sure that host address '
-                'user, and password or token is correct.'
-            )
-            raise InvalidCredentialsError(
-                'Your credentials are not valid, check your '
-                '`secrets` file and make sure that host address '
-                'user, and password or token is correct.'
-                ) from None
-        else:
-            write_log(f"Exception: {str(e)}")
-            raise e from None
-
-    project = client.getProject(Settings.POLARION_PROJECT_ID)
-    run = project.getTestRun(Settings.POLARION_TEST_RUN)    
-    
-    # Add in a global class all the polarion test run references
-    PolarionTestRunRefs.client = client
-    PolarionTestRunRefs.project = project
-    PolarionTestRunRefs.run = run
+    _configure.get_server_project_and_test_run()
 
 
 def pytest_collection_modifyitems(config, items):
@@ -249,7 +177,9 @@ def pytest_terminal_summary(terminalreporter):
                     'configured as "Automated Test".') from None
             else:
                 """
-                The error "zeep.exceptions.Fault: com.polarion.core.util.exceptions.UserFriendlyRuntimeException: Sorry this action cannot be executed without providing an e-signature in the Polarion portal: Execution of a Test Case in the Test Run 'REL'."
+                The error "zeep.exceptions.Fault: com.polarion.core.util.exceptions.UserFriendlyRuntimeException: 
+                Sorry this action cannot be executed without providing an e-signature in the Polarion portal: 
+                Execution of a Test Case in the Test Run 'REL'."
                 falls here when the Test Run is not configured as "Automated".
                 """
                 raise fault from None
@@ -294,16 +224,6 @@ def _store_item(item):
     TestExecutionResult.polarion_test_mapping[item.nodeid] = test_case_id
     TestExecutionResult.test_polarion_mapping[test_case_id] = item.nodeid
 
-
-def _authentication():
-    """Define if the authentication will be done by token or password.
-    Used in ``pytest_terminal_summary`` hook"""
-    if Credentials.POLARION_TOKEN == "":
-        logger.info("Trying Polarion auth by Password")
-        return "PASS_AUTH"
-    else:
-        logger.info("Trying Polarion auth by Token")
-        return "TOKEN_AUTH"
 
 # Assertion methods, messages, comments on Polarion Work Items
 
@@ -453,19 +373,3 @@ def _process_hyperlinks_from_polarion(test_case_links):
         hyperlinks.append(hyperlink_item['uri'])
 
     return hyperlinks
-
-
-def _validate_boolean_option(option):
-    if isinstance(option, bool):
-        return option
-    elif isinstance(option, str):
-        if option.lower() == "true":
-            return True
-        elif option.lower() == "false":
-            return False
-        else:
-            raise ConfigurationError(
-                "Option used for POLARION_VERIFY_CERTIFICATE on secrets file is not valid!"
-            ) from None
-    else:
-        pass
