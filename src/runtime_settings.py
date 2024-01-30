@@ -20,6 +20,7 @@ class Settings:
 
     LOG_PATH = ''
     ENABLE_LOG_FILE = False
+    USER_COMMENTS = ''
 
 
 class TestExecutionResult:

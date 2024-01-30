@@ -57,6 +57,7 @@ ALLOW_COMMENTS=True
 WEB_URL=http://localhost:8000/allure-html/
 POLARION_VERSION=2304
 # POLARION_VERSION="22 R2"
+USER_COMMENTS=I write my own comment\nBy config file.
 
 [log_file]
 ENABLE_LOG_FILE=True
@@ -118,6 +119,7 @@ Here follows a list of options available through the new ``config.ini`` file and
 | Polarion Test Run ID    | POLARION_TEST_RUN=REL-001                 | [polarion]             | --polarion-test-run=REL-001                   |
 | Comments by the plugin  | ALLOW_COMMENTS=True                       | [polarion]             | --allow-comments                              |
 | Allure URL              | WEB_URL=http://localhost:8000/allure-html | [polarion]             | --web-url=http://localhost:8000/allure-html/  |
+| User Comment            | USER_COMMENTS=My own comment              | [polarion]             | --user-comments=My own comment                |
 | Polarion Version        | POLARION_VERSION=22 R2                    | [polarion]             | Only through ``config.ini`` file              |
 | Enable Log File         | ENABLE_LOG_FILE=True                      | [log_file]             | Only through ``config.ini`` file              |
 | Log File Path           | LOG_FILE_PATH=C:\Users\user\Desktop       | [log_file]             | --log-plugin-report-path=C:\User\user\Desktop |
@@ -132,6 +134,7 @@ Here follows a list of options available through the new ``config.ini`` file and
 * **Polarion Test Run ID**: ID for the Test Run of project configured in the previous option.
 * **Comments by the plugin**: Comments that contains the assertion data for each Test Case/Work Item.
 * **Allure URL**: The address that points to the Allure report used in the hyperlinks of each Test Case/Work Item.
+* **User Comments**: Adds to all plugin comments a customized text passed by the user, or CI tool.
 * **Polarion Version**: Informs the plugin which Polarion Server version is being used.
 * **Enable Log File**: Internal log_file with information regarding configuration (**Warning:** The token info is also logged, be careful to share this data).
 * **Log File Path**: Path to save the log file. If not inform will be used the same as the one running the tests.
