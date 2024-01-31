@@ -1,25 +1,14 @@
 import pytest
 from _pytest.terminal import TerminalReporter
-import os
 
-import logging
-
-from .runtime_settings import (
-    TestExecutionResult,
-    Settings,
-    PolarionTestRunRefs,
-    Credentials
-)
-from .utils import read_or_get, read_or_get_ini
-from .exceptions import InvalidCredentialsError, TestCaseTypeError, \
-    TestCaseNotFoundError, ConfigurationError
-from .work_items_utils import get_uid_values, get_test_case_url
-
-from .hooks_utils.logs import write_log
+from .runtime_settings import TestExecutionResult, Settings
+from .exceptions import ConfigurationError
 from .hooks_utils import logs as _logs
-
 from .hooks_utils import configure as _configure
 from .hooks_utils import terminal_summary as _term_summ
+from .hooks_utils import collection_modifyitems as _coll_modi
+
+import logging
 
 logger = logging.getLogger(__file__)
 
@@ -85,26 +74,20 @@ def pytest_configure(config: pytest.Config):
             '\t"pip uninstall pytest-typhoon-polarion -y"')
 
     _configure.set_init_files_config(config)
-
     _logs.logging_secret_file_config()
-
     _configure.connect_polarion_server()
-
     _configure.get_server_project_and_test_run()
 
 
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]):
     '''On this hook the Polarion Test ID markers is collected and organized in dictionaries. Also, 
     part of validation is made in order to not wait the whole test execution to discover that the 
     test results cannot be uploaded'''
     for item in items:
-        _store_item(item)
+        _coll_modi.store_item(item)
 
-    write_log("pytest_collection_modifyitems", section=True)
-    write_log("Polarion Test Cases (based on the markers used):")
-    write_log(PolarionTestRunRefs.test_cases)
-    
-    _validation_test_run()
+    _logs.logging_test_cases_collected()
+    _coll_modi.validation_test_run()
 
 
 def pytest_terminal_summary(terminalreporter: TerminalReporter):
@@ -123,76 +106,3 @@ def pytest_terminal_summary(terminalreporter: TerminalReporter):
 
 def pytest_sessionfinish(session):
     pass
-
-
-def _get_polarion_marker(item):
-    """Catches the polarion marker.
-    Used in ``_store_item`` function > ``pytest_collection_modifyitems`` hook"""
-    return item.get_closest_marker('polarion')
-
-
-def _store_item(item):
-    """On colletion storage the tests node and the polarion tags.
-    Used in ``pytest_collection_modifyitems`` hook"""
-
-    marker = _get_polarion_marker(item)
-
-    if not marker:
-        return
-
-    test_case_id = marker.kwargs['test_id']
-    PolarionTestRunRefs.test_cases.append(test_case_id)
-    TestExecutionResult.polarion_test_mapping[item.nodeid] = test_case_id
-    TestExecutionResult.test_polarion_mapping[test_case_id] = item.nodeid
-
-
-def _validation_test_run():
-    """Check the server before test execution.
-    This is executed on ``pytest_collection_modifyitems``."""
-    run = PolarionTestRunRefs.run
-
-    for test_case_id in PolarionTestRunRefs.test_cases:
-        if not run.hasTestCase(test_case_id):
-            raise TestCaseNotFoundError(
-                f'The Test Case ID "{test_case_id}" was not found for the Test Run "{run.id}".'
-            )
-
-        if Settings.POLARION_VERSION == "2304":
-            if _test_type_select_from_test_case(test_case_id) != 'automated':
-                raise TestCaseTypeError(
-                    f'The Test Case ID "{test_case_id}" is not configured as "Automated Test".'
-                )
-        else:
-            try:  # TODO: Remove this in the future
-                if Settings.ENABLE_LOG_FILE:
-                    _store_test_case(test_case_id)
-            except:
-                pass
-
-
-def _test_type_select_from_test_case(test_case_id):
-    """Part of ``_validation_test_run`` method that 
-    executes on ``pytest_collection_modifyitems``."""
-    project = PolarionTestRunRefs.project
-    test_case = project.getWorkitem(test_case_id)
-    return test_case.customFields['Custom'][0]['value']['id']
-
-
-def _store_test_case(test_case_id):
-    """Part of ``_validation_test_run`` method that 
-    executes on ``pytest_collection_modifyitems``."""
-    project = PolarionTestRunRefs.project
-    test_case = project.getWorkitem(test_case_id)
-    
-    from pathlib import Path
-    if Settings.LOG_PATH is None:
-        dir_path = Path().resolve()
-    else:
-        dir_path = Path(Settings.LOG_PATH).resolve()
-    
-    dir_path_full = dir_path / "logs"
-    if not dir_path_full.exists():
-        os.mkdir(dir_path_full)
-
-    with open(dir_path_full / "test_case_example.txt", 'w') as ftxt:
-        ftxt.write(repr(test_case.customFields))

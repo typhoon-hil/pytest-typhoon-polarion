@@ -1,5 +1,8 @@
-from ..runtime_settings import Settings, Credentials
-
+from ..runtime_settings import (
+    Settings,
+    Credentials,
+    PolarionTestRunRefs
+)
 
 def write_log(message, section=False, sub=True, type='a'):
     if Settings.ENABLE_LOG_FILE:
@@ -56,3 +59,7 @@ def logging_secret_file_config():
     write_log(f"* Settings.USER_COMMENTS: {Settings.USER_COMMENTS} ({type(Settings.USER_COMMENTS)})")
 
 
+def logging_test_cases_collected():
+    write_log("pytest_collection_modifyitems", section=True)
+    write_log("Polarion Test Cases (based on the markers used):")
+    write_log(PolarionTestRunRefs.test_cases)
