@@ -1,16 +1,26 @@
 
 polarion_test_cases = {}
 
-class Settings:
+
+class Credentials:
     POLARION_HOST = ''
     POLARION_USER = ''
     POLARION_PASSWORD = ''
     POLARION_TOKEN = ''
+
+
+class Settings:
     POLARION_PROJECT_ID = ''
     POLARION_TEST_RUN = ''
     WEB_URL = ''
     ALLUREDIR = ''
     ALLOW_COMMENTS = None
+    POLARION_VERIFY_CERTIFICATE = True
+    POLARION_VERSION = '2304'
+
+    LOG_PATH = ''
+    ENABLE_LOG_FILE = False
+    USER_COMMENTS = ''
 
 
 class TestExecutionResult:

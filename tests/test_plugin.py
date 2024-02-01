@@ -1,26 +1,26 @@
 import pytest
 
-@pytest.mark.polarion(test_id="DEMO-391")
+@pytest.mark.polarion(test_id="TD-391")
 def test_if_true():
     assert 5 == 5
 
 
-@pytest.mark.polarion(test_id="DEMO-392")
+@pytest.mark.polarion(test_id="TD-392")
 def test_if_false():
     assert 5 == 6
 
 
-@pytest.mark.polarion(test_id="DEMO-393")
+@pytest.mark.polarion(test_id="TD-393")
 @pytest.mark.parametrize('value', [0, 10, 20, 25, 30])
 def test_with_parametrize(value):
     assert True
 
 
-@pytest.mark.polarion(test_id="DEMO-398")
+@pytest.mark.polarion(test_id="TD-394")
 @pytest.mark.parametrize('value', [0, 10, 20, 25, 30])
 @pytest.mark.parametrize('value2', [0, 10, 20, 25, 30])
 @pytest.mark.parametrize('value3', [0, 10, 20, 25, 30])
-def test_with_parametrize(value, value2, value3):
+def test_with_parametrize2(value, value2, value3):
     assert value < value2 or value == value3
 
 
@@ -30,8 +30,9 @@ def test_with_parametrize(value, value2, value3):
 #      is not existent in Polarion'''
 #     assert 5 == 6
 
+
+# @pytest.mark.polarion(test_id="DEMO-394")
 @pytest.mark.skip
-@pytest.mark.polarion(test_id="DEMO-394")
 def test_if_broken_block():
     assert np.array([1,2,3,4,5])
 
